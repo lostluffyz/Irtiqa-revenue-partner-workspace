@@ -82,7 +82,8 @@
       "Bash(grep -rn '\\\\$2[aby]\\\\$\\\\|argon2\\\\|pbkdf2\\\\|bcrypt' /home/lostluffyz/Projects/Project_Revenue/)",
       "Bash(kill 319882)",
       "Bash(rm -rf /home/lostluffyz/Projects/Project_Revenue/.next/cache/images)",
-      "Bash(grep -v \"data\\\\.ts$\")"
+      "Bash(grep -v \"data\\\\.ts$\")",
+      "Bash(echo \"exit=$?\")"
     ]
   }
 }

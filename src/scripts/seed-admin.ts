@@ -10,7 +10,7 @@
 //
 // Configuration via environment variables:
 //   ADMIN_EMAIL        — Admin login email (default: admin@irtiqa.ai)
-//   ADMIN_PASSWORD     — Admin password (default: revenuepartner@irtiqa.admin if not set)
+//   ADMIN_PASSWORD     — Admin password (REQUIRED — must be set in .env.local or Vercel env)
 //   ADMIN_NAME         — Admin display name (default: "Administrator")
 //
 // Prerequisites:
@@ -50,7 +50,14 @@ async function main() {
     process.exit(1);
   }
 
-  const adminPassword = process.env.ADMIN_PASSWORD || "revenuepartner@irtiqa.admin";
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!adminPassword) {
+    console.error("ERROR: ADMIN_PASSWORD is not set.");
+    console.error("  Set ADMIN_PASSWORD in your .env.local (local) or Vercel Environment Variables (production).");
+    console.error("  This is the ONLY source of truth for the admin login password.");
+    process.exit(1);
+  }
 
   const supabase = createClient(SUPABASE_URL, SECRET_KEY, {
     auth: {
@@ -86,6 +93,21 @@ async function main() {
     console.log(`  ID: ${existingAdmin.id}`);
     console.log("");
 
+    // Sync admin password from ADMIN_PASSWORD env var.
+    // This is why changing ADMIN_PASSWORD in Vercel now takes effect:
+    // the seed script updates the Supabase Auth password to match.
+    console.log("Syncing admin password from ADMIN_PASSWORD env var...");
+    const { error: updateError } = await supabase.auth.admin.updateUserById(
+      existingAdmin.id,
+      { password: adminPassword },
+    );
+
+    if (updateError) {
+      console.error("ERROR: Could not update admin password:", updateError.message);
+      process.exit(1);
+    }
+    console.log("Admin password updated successfully.");
+
     // Ensure profile has admin role
     const { error: profileError } = await supabase
       .from("profiles")
@@ -109,7 +131,7 @@ async function main() {
     }
 
     console.log("Profile verified (role=admin).");
-    console.log("Bootstrap complete — no changes needed.");
+    console.log("Bootstrap complete — admin password synced.");
     process.exit(0);
   }
 

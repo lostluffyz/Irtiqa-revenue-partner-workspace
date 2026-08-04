@@ -60,7 +60,13 @@ async function main() {
   });
 
   const adminEmail = process.env.ADMIN_EMAIL || "admin@irtiqa.ai";
-  const adminPassword = process.env.ADMIN_PASSWORD || "revenuepartner@irtiqa.admin";
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!adminPassword) {
+    console.error("ERROR: ADMIN_PASSWORD is not set.");
+    console.error("  Set ADMIN_PASSWORD in .env.local or as a Vercel Environment Variable.");
+    process.exit(1);
+  }
 
   const { data: adminSession, error: adminErr } = await adminClient.auth.signInWithPassword({
     email: adminEmail,
