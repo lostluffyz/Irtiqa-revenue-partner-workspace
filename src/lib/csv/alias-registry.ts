@@ -1,0 +1,620 @@
+// ============================================
+// CSV Canonical Field Alias Registry
+// ============================================
+//
+// Centralized, maintainable alias registry for canonical lead import fields.
+// Do not scatter header aliases across UI components and server actions.
+//
+// Each canonical field has:
+//   - its database column name (canonical)
+//   - whether it is required for CSV import
+//   - whether it maps to an actual database column (stored) or is recognition-only
+//   - known exact aliases (raw forms an admin might write in a CSV header)
+//   - pre-normalized aliases (generated from known aliases for fast matching)
+//
+// Fields with stored=false appear in the alias registry and preview but are
+// silently excluded from database inserts. Add them so the UI recognizes
+// common CSV columns without requiring DB schema changes.
+//
+// Add new aliases here. The registry is designed to be easy to extend.
+
+import { normalizeHeader } from "./header-normalization";
+
+// ---------------------------------------------------------------------------
+// Canonical field definition
+// ---------------------------------------------------------------------------
+export interface CanonicalFieldDef {
+  /** Database column name — this is what goes into the insert object. */
+  canonical: string;
+  /** Human-readable label shown in the UI. */
+  label: string;
+  /** True if a CSV MUST produce a mapping for this field. */
+  required: boolean;
+  /** True if this field maps to an actual database column (false = recognition-only). */
+  stored: boolean;
+  /** Known raw aliases (as they might appear in a CSV header). */
+  knownAliases: readonly string[];
+}
+
+/**
+ * All canonical lead fields with their known aliases.
+ *
+ * Guidance for adding aliases:
+ *   - Include common real-world variants (underscore, hyphen, space forms)
+ *   - Include common synonyms used in lead-generation tools
+ *   - The normalizeHeader() function handles capitalization,
+ *     whitespace, underscore/hyphen variations automatically
+ */
+export const CANONICAL_FIELDS: readonly CanonicalFieldDef[] = [
+  // =========================================================================
+  // STORED FIELDS — map to actual database columns
+  // =========================================================================
+
+  {
+    canonical: "company_name",
+    label: "Company",
+    required: true,
+    stored: true,
+    knownAliases: [
+      "company",
+      "company_name",
+      "company name",
+      "company-name",
+      "business",
+      "business_name",
+      "business name",
+      "business-name",
+      "organization",
+      "organisation",
+      "organization_name",
+      "organisation_name",
+      "organization name",
+      "organisation name",
+      "org",
+      "store",
+      "store_name",
+      "store name",
+      "lead_name",
+      "lead name",
+      "listing",
+      "listing_name",
+      "listing name",
+      "firm",
+      "firm_name",
+      "firm name",
+      "title",
+      "name",
+      "shop",
+      "shop_name",
+      "shop name",
+      "vendor",
+      "vendor_name",
+      "vendor name",
+      "merchant",
+      "merchant_name",
+      "merchant name",
+      "legal_name",
+      "legal name",
+      "display_name",
+      "display name",
+      "company_title",
+      "company title",
+      "trading_name",
+      "trading name",
+      "brand",
+      "brand_name",
+      "brand name",
+      "enterprise",
+      "enterprise_name",
+      "enterprise name",
+      "restaurant_name",
+      "restaurant name",
+      "practice_name",
+      "practice name",
+      "clinic_name",
+      "clinic name",
+      "school_name",
+      "school name",
+      "property_name",
+      "property name",
+      "hotel_name",
+      "hotel name",
+    ],
+  },
+  {
+    canonical: "website",
+    label: "Website",
+    required: false,
+    stored: true,
+    knownAliases: [
+      "website",
+      "website_url",
+      "website url",
+      "website-url",
+      "url",
+      "domain",
+      "company_url",
+      "company url",
+      "company-url",
+      "business_url",
+      "business url",
+      "business-url",
+      "web_address",
+      "web address",
+      "web_address_url",
+      "web address url",
+      "site",
+      "site_url",
+      "site url",
+      "webpage",
+      "web_page",
+      "web page",
+      "web_page_url",
+      "web page url",
+      "homepage",
+      "home_page",
+      "home page",
+      "company_website",
+      "company website",
+      "official_website",
+      "official website",
+      "website_link",
+      "website link",
+      "contact_website",
+      "contact website",
+      "website_address",
+      "website address",
+      "internet_address",
+      "internet address",
+    ],
+  },
+  {
+    canonical: "phone",
+    label: "Phone",
+    required: false,
+    stored: true,
+    knownAliases: [
+      "phone",
+      "phone_number",
+      "phone number",
+      "phone-number",
+      "mobile",
+      "mobile_number",
+      "mobile number",
+      "mobile phone",
+      "cell",
+      "cell_number",
+      "cell number",
+      "telephone",
+      "telephone_number",
+      "telephone number",
+      "contact_number",
+      "contact number",
+      "contact_phone",
+      "contact phone",
+      "business_phone",
+      "business phone",
+      "business_phone_number",
+      "business phone number",
+      "work_phone",
+      "work phone",
+      "office_phone",
+      "office phone",
+      "company_phone",
+      "company phone",
+      "phone_1",
+      "phone1",
+      "phone_2",
+      "phone2",
+      "primary_phone",
+      "primary phone",
+      "phone_no",
+      "phone no",
+      "tel",
+      "tEL",
+      "phone_number_1",
+      "phone number 1",
+    ],
+  },
+  {
+    canonical: "email",
+    label: "Email",
+    required: false,
+    stored: true,
+    knownAliases: [
+      "email",
+      "email_address",
+      "email address",
+      "email-address",
+      "business_email",
+      "business email",
+      "work_email",
+      "work email",
+      "contact_email",
+      "contact email",
+      "primary_email",
+      "primary email",
+      "e-mail",
+      "email_1",
+      "email1",
+      "email_2",
+      "email2",
+      "company_email",
+      "company email",
+      "office_email",
+      "office email",
+      "email_address_1",
+      "email address 1",
+      "email_id",
+      "email id",
+      "mail",
+      "email_address_work",
+      "email address work",
+      "corporate_email",
+      "corporate email",
+    ],
+  },
+  {
+    canonical: "industry",
+    label: "Industry",
+    required: false,
+    stored: true,
+    knownAliases: [
+      "industry",
+      "category",
+      "business_category",
+      "business category",
+      "niche",
+      "vertical",
+      "sector",
+      "subcategory",
+      "industry_type",
+      "industry type",
+      "industry_category",
+      "industry category",
+      "business_type",
+      "business type",
+      "business_sector",
+      "business sector",
+      "company_type",
+      "company type",
+      "company_industry",
+      "company industry",
+      "primary_industry",
+      "primary industry",
+      "industry_sector",
+      "industry sector",
+      "market_sector",
+      "market sector",
+      "segment",
+      "classification",
+      "business_classification",
+      "business classification",
+    ],
+  },
+  {
+    canonical: "country",
+    label: "Country",
+    required: false,
+    stored: true,
+    knownAliases: [
+      "country",
+      "country_name",
+      "country name",
+      "country-name",
+      "nation",
+      "country_code",
+      "country code",
+      "country_code_2",
+      "country code 2",
+      "country_code2",
+      "country_iso",
+      "country iso",
+      "iso_country",
+      "iso country",
+      "country_region",
+      "country region",
+      "region",
+    ],
+  },
+  {
+    canonical: "internal_notes",
+    label: "Internal Notes",
+    required: false,
+    stored: true,
+    knownAliases: [
+      "internal_notes",
+      "internal notes",
+      "notes",
+      "note",
+      "comment",
+      "comments",
+      "remarks",
+      "additional_notes",
+      "additional notes",
+      "description",
+      "extra_notes",
+      "extra notes",
+      "admin_notes",
+      "admin notes",
+      "notes_internal",
+      "notes internal",
+    ],
+  },
+
+  // =========================================================================
+  // RECOGNITION-ONLY FIELDS (stored=false)
+  //
+  // These fields are recognized during header mapping for preview purposes
+  // but are silently excluded from database inserts. They improve the preview
+  // UX and reduce false ambiguity — the URL classifier may reclassify columns
+  // to these types without requiring database schema changes.
+  // =========================================================================
+
+  {
+    canonical: "city",
+    label: "City",
+    required: false,
+    stored: true,
+    knownAliases: [
+      "city",
+      "city_name",
+      "city name",
+      "town",
+      "locality",
+      "municipality",
+      "metro_area",
+      "metro area",
+      "metro",
+      "city_area",
+      "city area",
+      "administrative_area_2",
+      "administrative area 2",
+      "admin_area_2",
+      "admin area 2",
+    ],
+  },
+  {
+    canonical: "state",
+    label: "State",
+    required: false,
+    stored: true,
+    knownAliases: [
+      "state",
+      "state_name",
+      "state name",
+      "province",
+      "region",
+      "territory",
+      "administrative_area",
+      "administrative area",
+      "admin_area",
+      "admin area",
+      "administrative_area_1",
+      "administrative area 1",
+      "admin_area_1",
+      "admin area 1",
+      "state_province",
+      "state province",
+      "state_code",
+      "state code",
+      "iso_state",
+      "iso state",
+    ],
+  },
+  {
+    canonical: "postal_code",
+    label: "Postal Code",
+    required: false,
+    stored: false,
+    knownAliases: [
+      "postal_code",
+      "postal code",
+      "postal-code",
+      "zip",
+      "zip_code",
+      "zip code",
+      "zipcode",
+      "postcode",
+      "post_code",
+      "post code",
+      "postal",
+      "zip_postal_code",
+      "zip postal code",
+      "postal_code_zip",
+      "postal code zip",
+      "pin_code",
+      "pin code",
+      "postal_zip",
+      "postal zip",
+    ],
+  },
+  {
+    canonical: "address",
+    label: "Address",
+    required: false,
+    stored: false,
+    knownAliases: [
+      "address",
+      "full_address",
+      "full address",
+      "street",
+      "street_address",
+      "street address",
+      "address_line",
+      "address line",
+      "address_line_1",
+      "address line 1",
+      "address_1",
+      "address1",
+      "address_line_2",
+      "address line 2",
+      "address_2",
+      "address2",
+      "formatted_address",
+      "formatted address",
+      "location_address",
+      "location address",
+      "business_address",
+      "business address",
+      "physical_address",
+      "physical address",
+      "mailing_address",
+      "mailing address",
+      "address_line1",
+      "addr_line1",
+      "address_street",
+      "address street",
+    ],
+  },
+  {
+    canonical: "google_maps_url",
+    label: "Google Maps URL",
+    required: false,
+    stored: false,
+    knownAliases: [
+      "google_maps_url",
+      "google maps url",
+      "google-maps-url",
+      "maps_url",
+      "maps url",
+      "gmaps",
+      "google_maps_link",
+      "google maps link",
+      "place_url",
+      "place url",
+      "maps_link",
+      "maps link",
+      "google_maps_place_id",
+      "maps_place_url",
+      "maps place url",
+      "gmb_url",
+      "gmb url",
+      "google_business_url",
+      "google business url",
+      "google_maps",
+    ],
+  },
+  {
+    canonical: "linkedin_url",
+    label: "LinkedIn URL",
+    required: false,
+    stored: false,
+    knownAliases: [
+      "linkedin_url",
+      "linkedin url",
+      "linkedin",
+      "linkedin_link",
+      "linkedin link",
+      "linkedin_profile",
+      "linkedin profile",
+      "linkedin_company",
+      "linkedin company",
+      "linkedin_company_url",
+      "linkedin company url",
+      "linkedin_page",
+      "linkedin page",
+      "li_url",
+      "li url",
+      "linkedin_id",
+      "linkedin id",
+    ],
+  },
+  {
+    canonical: "facebook_url",
+    label: "Facebook URL",
+    required: false,
+    stored: false,
+    knownAliases: [
+      "facebook_url",
+      "facebook url",
+      "facebook",
+      "facebook_link",
+      "facebook link",
+      "facebook_page",
+      "facebook page",
+      "facebook_profile",
+      "facebook profile",
+      "fb_url",
+      "fb url",
+      "fb",
+      "facebook_id",
+      "facebook id",
+    ],
+  },
+  {
+    canonical: "source_url",
+    label: "Source URL",
+    required: false,
+    stored: false,
+    knownAliases: [
+      "source_url",
+      "source url",
+      "source_link",
+      "source link",
+      "scrape_url",
+      "scrape url",
+      "export_url",
+      "export url",
+      "listing_url",
+      "listing url",
+      "profile_url",
+      "profile url",
+      "page_url",
+      "page url",
+      "data_source_url",
+      "data source url",
+      "referral_url",
+      "referral url",
+    ],
+  },
+];
+
+// ---------------------------------------------------------------------------
+// Pre-built lookup structures
+// ---------------------------------------------------------------------------
+
+/** Map: canonical field key → its definition. */
+export const CANONICAL_MAP: ReadonlyMap<string, CanonicalFieldDef> = new Map(
+  CANONICAL_FIELDS.map((f) => [f.canonical, f]),
+);
+
+/** Map: normalized alias → canonical field key. Built once from all known aliases. */
+export const ALIAS_TO_CANONICAL: ReadonlyMap<string, string> = new Map(
+  CANONICAL_FIELDS.flatMap((f) =>
+    f.knownAliases.map((alias) => [normalizeHeader(alias), f.canonical]),
+  ),
+);
+
+/**
+ * Canonical field keys that must NEVER be settable via CSV headers.
+ * These are protected database columns that must only be set explicitly
+ * by the server-side import logic.
+ */
+export const PROTECTED_CANONICAL_KEYS: readonly string[] = [
+  "id",
+  "assigned_to",
+  "assigned_at",
+  "created_at",
+  "created_by",
+  "updated_at",
+  "status",
+  "is_active",
+  "role",
+  "password",
+  "auth_user_id",
+  "is_admin",
+  "owner_id",
+  "assigned_partner_id",
+];
+
+/**
+ * The set of canonical field keys that CSV import is ALLOWED to populate.
+ * Only fields with `stored: true` (actual database columns) are included.
+ * Recognition-only fields (city, state, postal code, URL types, etc.) are
+ * recognized in the header mapper and shown in preview but silently excluded
+ * from database inserts.
+ */
+export const ALLOWED_CSV_FIELDS: ReadonlySet<string> = new Set(
+  CANONICAL_FIELDS.filter((f) => f.stored).map((f) => f.canonical),
+);
