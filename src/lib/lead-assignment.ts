@@ -137,31 +137,20 @@ export function buildFilters(
 }
 
 /**
- * Build a filter query that excludes leads assigned to any of the given partners.
- */
-function excludeAssignedToPartners(
-  query: QueryBuilder,
-  partnerIds: string[],
-): QueryBuilder {
-  if (partnerIds.length === 1) {
-    return query.neq("assigned_to", partnerIds[0]);
-  }
-  return query.not("assigned_to", "in", `(${partnerIds.join(",")})`);
-}
-
-/**
- * Build a filter query for unassigned leads excluding those assigned to selected partners.
+ * Build a filter query for unassigned leads.
+ *
+ * IMPORTANT: never combine `assigned_to IS NULL` with a `NOT IN`/`!=` filter on
+ * `assigned_to`. Under SQL three-valued logic, `NULL NOT IN (...)` and
+ * `NULL != x` both evaluate to NULL (filtered out), so every unassigned lead
+ * would be excluded and the "available" count would collapse to 0.
  */
 function baseUnassignedQuery(
   adminClient: SupabaseClient,
-  partnerIds: string[],
 ) {
-  let q = adminClient
+  return adminClient
     .from("leads")
     .select("id", { count: "exact", head: true })
     .is("assigned_to", null);
-  q = excludeAssignedToPartners(q, partnerIds);
-  return q;
 }
 
 // ---------------------------------------------------------------------------
@@ -237,17 +226,12 @@ export async function computePreview(
   // 1. Fetch partner loads
   const partnerLoads = await fetchPartnerLoads(adminClient, params.partnerIds);
 
-  // 2. Count available (unassigned, excluding selected partners)
-  let availableQuery = baseUnassignedQuery(adminClient, params.partnerIds);
+  // 2. Count available (unassigned leads matching the filters)
+  let availableQuery = baseUnassignedQuery(adminClient);
   availableQuery = buildFilters(availableQuery, params.method, params);
   const { count: available } = await availableQuery;
 
-  // 3. Count already assigned to any selected partner
-  let assignedQuery = adminClient
-    .from("leads")
-    .select("id", { count: "exact", head: true });
-  assignedQuery = excludeAssignedToPartners(assignedQuery, params.partnerIds);
-  // Reverse: count those assigned TO selected partners
+  // 3. Count leads already assigned to any selected partner
   let assignedToCount = 0;
   for (const pid of params.partnerIds) {
     let pq = adminClient
@@ -266,12 +250,14 @@ export async function computePreview(
   totalQuery = buildFilters(totalQuery, params.method, params);
   const { count: totalMatching } = await totalQuery;
 
-  // 5. Count missing data (excludes those already assigned to selected partners)
+  // 5. Count unassigned matching leads missing the required field (company_name).
+  //    Only the import-required field (company_name) counts as "missing data";
+  //    optional fields like email must not flag otherwise-assignable leads.
   let missingQuery = adminClient
     .from("leads")
     .select("id", { count: "exact", head: true })
-    .or("company_name.is.null,company_name.eq,email.is.null,email.eq");
-  missingQuery = excludeAssignedToPartners(missingQuery, params.partnerIds);
+    .is("assigned_to", null)
+    .or("company_name.is.null,company_name.eq.");
   missingQuery = buildFilters(missingQuery, params.method, params);
   const { count: missingDataCount } = await missingQuery;
 
@@ -320,7 +306,6 @@ export async function computePreview(
     .is("assigned_to", null)
     .order("created_at", { ascending: false })
     .limit(20);
-  sampleQuery = excludeAssignedToPartners(sampleQuery, params.partnerIds);
   sampleQuery = buildFilters(sampleQuery, params.method, params);
   const { data: sampleData } = await sampleQuery;
 
@@ -415,7 +400,6 @@ export async function executeAssignment(
       .is("assigned_to", null)
       .order("id")
       .limit(entry.incoming);
-    query = excludeAssignedToPartners(query, params.partnerIds);
     query = buildFilters(query, params.method, params);
 
     const { data: leadsToAssign } = await query;
