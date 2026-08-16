@@ -21,6 +21,7 @@ import {
   Activity,
   Globe,
   Trash2,
+  Target,
 } from "lucide-react";
 import {
   Avatar,
@@ -105,6 +106,30 @@ interface PartnerDetailProps {
   };
   programDay: number;
   streak: number;
+  allocationState: {
+    programDay: number;
+    programExpired: boolean;
+    totalAssigned: number;
+    effectiveProgramLimit: number;
+    approvedExtraLeads: number;
+    programCapacity: number;
+    weeklyLimit: number;
+    weeklyUsed: number;
+    weeklyCapacity: number;
+    periodStart: string;
+    periodEnd: string;
+    allocationEnabled: boolean;
+    eligible: boolean;
+    eligibleReason: string;
+  } | null;
+  allocationBatches: Array<{
+    id: string;
+    lead_count: number;
+    program_total_after: number;
+    source: string;
+    reason: string | null;
+    created_at: string;
+  }>;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -197,6 +222,8 @@ export function PartnerDetail({
   compliance,
   programDay,
   streak,
+  allocationState,
+  allocationBatches,
 }: PartnerDetailProps) {
   const router = useRouter();
   const displayName = partner.profiles?.full_name || partner.company_id;
@@ -645,6 +672,110 @@ export function PartnerDetail({
           </div>
         )}
       </div>
+
+      {/* ═══════════════════════════════════════════════════════════
+          ALLOCATION STATUS CARD
+          ═══════════════════════════════════════════════════════════ */}
+      {allocationState && (
+        <div className="surface p-5 sm:p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Target className="h-4 w-4 text-[var(--text-3)]" />
+            <h2 className="dl-type-body font-semibold text-[var(--text-1)]">
+              Lead Allocation
+            </h2>
+            {!allocationState.allocationEnabled && (
+              <Badge variant="info" className="text-xs">Disabled</Badge>
+            )}
+            {allocationState.programExpired && (
+              <Badge variant="danger" className="text-xs">Expired</Badge>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div>
+              <p className="dl-type-caption text-[var(--text-3)]">Program Limit</p>
+              <p className="dl-type-body font-semibold dl-tabular text-[var(--text-1)]">
+                {allocationState.effectiveProgramLimit}
+                {allocationState.approvedExtraLeads > 0 && (
+                  <span className="text-emerald-600 text-xs ml-1">(+{allocationState.approvedExtraLeads} extra)</span>
+                )}
+              </p>
+            </div>
+            <div>
+              <p className="dl-type-caption text-[var(--text-3)]">Assigned / Remaining</p>
+              <p className="dl-type-body font-semibold dl-tabular text-[var(--text-1)]">
+                {allocationState.totalAssigned} / {allocationState.programCapacity}
+              </p>
+              <div className="mt-1 h-1.5 w-full bg-[var(--border-subtle)] rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{
+                    width: `${Math.min(100, (allocationState.totalAssigned / allocationState.effectiveProgramLimit) * 100)}%`,
+                    backgroundColor:
+                      allocationState.programCapacity <= 0
+                        ? "var(--status-danger)"
+                        : allocationState.programCapacity < 50
+                          ? "var(--status-warning)"
+                          : "var(--accent)",
+                  }}
+                />
+              </div>
+            </div>
+            <div>
+              <p className="dl-type-caption text-[var(--text-3)]">Weekly Limit</p>
+              <p className="dl-type-body font-semibold dl-tabular text-[var(--text-1)]">
+                {allocationState.weeklyUsed} / {allocationState.weeklyLimit}
+              </p>
+              <div className="mt-1 h-1.5 w-full bg-[var(--border-subtle)] rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{
+                    width: `${Math.min(100, (allocationState.weeklyUsed / allocationState.weeklyLimit) * 100)}%`,
+                    backgroundColor:
+                      allocationState.weeklyCapacity <= 0
+                        ? "var(--status-danger)"
+                        : allocationState.weeklyCapacity < 20
+                          ? "var(--status-warning)"
+                          : "var(--accent)",
+                  }}
+                />
+              </div>
+            </div>
+            <div>
+              <p className="dl-type-caption text-[var(--text-3)]">Period</p>
+              <p className="dl-type-body font-semibold dl-tabular text-[var(--text-1)]">
+                {new Date(allocationState.periodStart + "T00:00:00Z").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                {" – "}
+                {new Date(allocationState.periodEnd + "T00:00:00Z").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+              </p>
+            </div>
+          </div>
+
+          {/* Recent allocation batches */}
+          {allocationBatches.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-[var(--border-subtle)]">
+              <p className="dl-type-caption text-[var(--text-3)] mb-2">Recent Batches</p>
+              <div className="space-y-1.5">
+                {allocationBatches.slice(0, 5).map((batch) => (
+                  <div key={batch.id} className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <Badge variant={batch.source === "automatic" ? "default" : "info"} className="text-[10px]">
+                        {batch.source}
+                      </Badge>
+                      <span className="text-[var(--text-2)]">
+                        {batch.lead_count} leads → total {batch.program_total_after}
+                      </span>
+                    </div>
+                    <span className="text-[var(--text-3)]">
+                      {new Date(batch.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ═══════════════════════════════════════════════════════════
           RECENT DAILY REPORTS

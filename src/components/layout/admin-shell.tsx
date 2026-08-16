@@ -20,6 +20,7 @@ import {
   Activity,
   Megaphone,
   BookOpen,
+  CalendarCheck,
   PanelLeftClose,
   PanelLeftOpen,
   LogOut,
@@ -42,6 +43,7 @@ const NAV = {
     { href: "/admin/leads", label: "Leads", icon: Target },
   ],
   operate: [
+    { href: "/admin/allocation", label: "Allocation", icon: CalendarCheck },
     { href: "/admin/reports", label: "Reports", icon: FileText },
     { href: "/admin/activity", label: "Activity", icon: Activity },
   ],

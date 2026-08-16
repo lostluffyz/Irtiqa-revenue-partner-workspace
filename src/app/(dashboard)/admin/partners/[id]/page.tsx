@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { adminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/admin";
 import { notFound } from "next/navigation";
 import {
@@ -18,6 +19,7 @@ import {
   getComplianceConfig,
   type ReportStatus,
 } from "@/lib/compliance";
+import { getPartnerAllocationState, type AllocationState, type AllocationBatchRow } from "@/lib/allocation";
 import { PartnerDetail } from "./partner-detail";
 
 /* ═══════════════════════════════════════════════════════════════
@@ -122,6 +124,9 @@ async function getPartnerData(id: string) {
   const programDay = getProgramDay(partner.program_start_date);
   const streak = await calculateStreak(supabase, partner.id);
 
+  // Allocation state
+  const { state: allocationState, batches: allocationBatches } = await getPartnerAllocationState(adminClient, partner.id);
+
   // Compliance status for this partner
   const config = getComplianceConfig();
   const { isOverdue, deadlineHour, deadlineMinute, overdueSince } =
@@ -191,6 +196,8 @@ async function getPartnerData(id: string) {
     },
     programDay,
     streak,
+    allocationState,
+    allocationBatches,
   };
 }
 

@@ -266,8 +266,12 @@ export type Database = {
       }
       partners: {
         Row: {
+          approved_extra_leads: number
+          allocation_enabled: boolean
           company_id: string
           created_at: string
+          default_program_lead_limit: number
+          default_weekly_lead_limit: number
           id: string
           last_login_at: string | null
           phone: string | null
@@ -275,10 +279,15 @@ export type Database = {
           region_id: string | null
           status: string
           updated_at: string
+          weekly_lead_limit_override: number | null
         }
         Insert: {
+          approved_extra_leads?: number
+          allocation_enabled?: boolean
           company_id: string
           created_at?: string
+          default_program_lead_limit?: number
+          default_weekly_lead_limit?: number
           id: string
           last_login_at?: string | null
           phone?: string | null
@@ -286,10 +295,15 @@ export type Database = {
           region_id?: string | null
           status?: string
           updated_at?: string
+          weekly_lead_limit_override?: number | null
         }
         Update: {
+          approved_extra_leads?: number
+          allocation_enabled?: boolean
           company_id?: string
           created_at?: string
+          default_program_lead_limit?: number
+          default_weekly_lead_limit?: number
           id?: string
           last_login_at?: string | null
           phone?: string | null
@@ -297,6 +311,7 @@ export type Database = {
           region_id?: string | null
           status?: string
           updated_at?: string
+          weekly_lead_limit_override?: number | null
         }
         Relationships: [
           {
@@ -469,6 +484,108 @@ export type Database = {
           },
         ]
       }
+      lead_allocation_batches: {
+        Row: {
+          id: string
+          partner_id: string
+          allocation_period_start: string
+          allocation_period_end: string
+          lead_count: number
+          program_total_after: number
+          source: string
+          triggered_by: string | null
+          reason: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          partner_id: string
+          allocation_period_start: string
+          allocation_period_end: string
+          lead_count?: number
+          program_total_after?: number
+          source: string
+          triggered_by?: string | null
+          reason?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          partner_id?: string
+          allocation_period_start?: string
+          allocation_period_end?: string
+          lead_count?: number
+          program_total_after?: number
+          source?: string
+          triggered_by?: string | null
+          reason?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_allocation_batches_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_allocation_batches_triggered_by_fkey"
+            columns: ["triggered_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_allocation_approvals: {
+        Row: {
+          id: string
+          partner_id: string
+          quantity: number
+          reason: string | null
+          approved_by: string
+          approved_at: string
+          expires_on: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          partner_id: string
+          quantity: number
+          reason?: string | null
+          approved_by: string
+          approved_at?: string
+          expires_on?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          partner_id?: string
+          quantity?: number
+          reason?: string | null
+          approved_by?: string
+          approved_at?: string
+          expires_on?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_allocation_approvals_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_allocation_approvals_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -477,6 +594,38 @@ export type Database = {
       generate_company_id: { Args: never; Returns: string }
       is_admin: { Args: never; Returns: boolean }
       is_partner: { Args: never; Returns: boolean }
+      allocate_automatic_batch: {
+        Args: {
+          p_partner_id: string
+          p_period_start: string
+          p_period_end: string
+          p_max_count: number
+          p_reason?: string
+        }
+        Returns: number
+      }
+      record_manual_batch: {
+        Args: {
+          p_partner_id: string
+          p_lead_ids: string[]
+          p_period_start: string
+          p_period_end: string
+          p_source: string
+          p_triggered_by: string
+          p_reason: string
+        }
+        Returns: number
+      }
+      approve_extra_leads: {
+        Args: {
+          p_partner_id: string
+          p_quantity: number
+          p_reason: string
+          p_approved_by: string
+          p_expires_on?: string
+        }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never

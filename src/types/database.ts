@@ -60,3 +60,10 @@ export type PartnerActivityLog = GeneratedDatabase["public"]["Tables"]["partner_
 export type Region = GeneratedDatabase["public"]["Tables"]["regions"]["Row"];
 
 export type AdminAuditLog = GeneratedDatabase["public"]["Tables"]["admin_audit_log"]["Row"];
+
+// ---- Allocation types ----
+
+export type AllocationBatch = GeneratedDatabase["public"]["Tables"]["lead_allocation_batches"]["Row"];
+export type AllocationBatchInsert = GeneratedDatabase["public"]["Tables"]["lead_allocation_batches"]["Insert"];
+export type AllocationApproval = GeneratedDatabase["public"]["Tables"]["lead_allocation_approvals"]["Row"];
+export type AllocationApprovalInsert = GeneratedDatabase["public"]["Tables"]["lead_allocation_approvals"]["Insert"];
