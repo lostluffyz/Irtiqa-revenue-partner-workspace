@@ -406,7 +406,7 @@ export interface AllocationRunResult {
 
 /**
  * Run automatic allocation for all eligible partners.
- * Designed to be called by a daily Vercel cron job.
+ * Designed to be called by a weekly Vercel cron job (Monday 06:00 UTC).
  *
  * @param dryRun - If true, returns what would happen without writing
  */

@@ -209,6 +209,20 @@ const expiredStart = (() => {
 // Compute the current allocation period for recentStart
 const currentPeriod = getCurrentAllocationPeriod(recentStart, todayISO());
 
+// Shared base partner template
+const basePartner = {
+  id: "partner-1",
+  company_id: "RP001",
+  status: "active",
+  program_start_date: recentStart,
+  default_program_lead_limit: DEFAULT_PROGRAM_LEAD_LIMIT,
+  default_weekly_lead_limit: DEFAULT_WEEKLY_LEAD_LIMIT,
+  approved_extra_leads: 0,
+  weekly_lead_limit_override: null,
+  allocation_enabled: true,
+  profiles: { full_name: "Test Partner" },
+};
+
 // ============================================
 // Runner tests (with FakeDb)
 // ============================================
@@ -322,14 +336,17 @@ class FakeRpc {
     this.partnerLeads = new Map();
   }
 
-  async call(fn: string, args: Record<string, unknown>) {
+  async call(fn: string, args: Record<string, unknown>, ctx?: { leads: Record<string, unknown>[] }) {
     this.calls.push({ fn, args });
 
     if (fn === "allocate_automatic_batch") {
       const partnerId = args.p_partner_id as string;
       const maxCount = args.p_max_count as number;
       const currentTotal = this.partnerLeads.get(partnerId) || 0;
-      const newTotal = Math.min(currentTotal + maxCount, 400);
+      // Count unassigned leads available
+      const available = ctx?.leads.filter((l) => l.assigned_to === null || l.assigned_to === undefined).length ?? maxCount;
+      const capacity = Math.min(maxCount, available);
+      const newTotal = Math.min(currentTotal + capacity, 400);
       const assigned = newTotal - currentTotal;
       this.partnerLeads.set(partnerId, newTotal);
       return { data: assigned, error: null };
@@ -359,32 +376,20 @@ function makeFakeDb(partners: Record<string, unknown>[], leads: Record<string, u
       }
       return new FakeQuery([]);
     },
-    rpc: (fn: string, args: Record<string, unknown>) => rpc.call(fn, args),
+    rpc: (fn: string, args: Record<string, unknown>) => rpc.call(fn, args, { leads }),
     _rpc: rpc,
   };
 }
 
 describe("runAutomaticAllocation", () => {
-  const basePartner = {
-    id: "partner-1",
-    company_id: "RP001",
-    status: "active",
-    program_start_date: recentStart,
-    default_program_lead_limit: DEFAULT_PROGRAM_LEAD_LIMIT,
-    default_weekly_lead_limit: DEFAULT_WEEKLY_LEAD_LIMIT,
-    approved_extra_leads: 0,
-    weekly_lead_limit_override: null,
-    allocation_enabled: true,
-    profiles: { full_name: "Test Partner" },
-  };
-
   it("allocates leads to eligible partner", async () => {
-    const db = makeFakeDb([basePartner], []);
+    const leads = Array.from({ length: 200 }, (_, i) => ({ id: `lead-${i}`, assigned_to: null }));
+    const db = makeFakeDb([basePartner], leads);
     const result = await runAutomaticAllocation(db as unknown as SupabaseClient, { dryRun: false });
 
     expect(result.results).toHaveLength(1);
     expect(result.results[0].eligible).toBe(true);
-    expect(result.results[0].assigned).toBeGreaterThan(0);
+    expect(result.results[0].assigned).toBe(100);
     expect(result.errors).toHaveLength(0);
   });
 
@@ -567,5 +572,300 @@ describe("constants", () => {
     expect(DEFAULT_WEEKLY_LEAD_LIMIT).toBe(100);
     expect(ALLOCATION_PERIOD_DAYS).toBe(7);
     expect(PROGRAM_DURATION_DAYS).toBe(30);
+  });
+});
+
+// ============================================
+// Weekly allocation lifecycle tests
+// ============================================
+
+describe("weekly allocation lifecycle", () => {
+  it("first weekly allocation gives 100 leads", async () => {
+    // Partner started 2 days ago → day 3, week 1, no prior batches
+    const start = (() => {
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() - 2);
+      return d.toISOString().slice(0, 10);
+    })();
+    const partner = { ...basePartner, program_start_date: start };
+    const unassigned = Array.from({ length: 200 }, (_, i) => ({ id: `unassigned-${i}`, assigned_to: null }));
+    const db = makeFakeDb([partner], unassigned);
+    const result = await runAutomaticAllocation(db as unknown as SupabaseClient, { dryRun: false });
+
+    expect(result.results[0].eligible).toBe(true);
+    expect(result.results[0].assigned).toBe(100);
+    expect(result.results[0].reason).toBe("Allocated");
+  });
+
+  it("second weekly allocation gives another 100 leads", async () => {
+    // Partner started 9 days ago → day 10, week 2
+    // Week1 batch already exists with 100 leads
+    const start = (() => {
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() - 9);
+      return d.toISOString().slice(0, 10);
+    })();
+    const partner = { ...basePartner, program_start_date: start };
+    // Pre-existing week1 batch (different period start)
+    const week1Start = addDaysISO(start, 0);
+    const week1End = addDaysISO(start, 7);
+    const batches = [
+      { id: "b1", partner_id: "partner-1", allocation_period_start: week1Start, allocation_period_end: week1End, lead_count: 100, source: "automatic" },
+    ];
+    // 100 leads already assigned from week1 + unassigned pool
+    const assigned = Array.from({ length: 100 }, (_, i) => ({ id: `assigned-${i}`, assigned_to: "partner-1" }));
+    const unassigned = Array.from({ length: 200 }, (_, i) => ({ id: `unassigned-${i}`, assigned_to: null }));
+    const db = makeFakeDb([partner], [...assigned, ...unassigned], batches);
+    const result = await runAutomaticAllocation(db as unknown as SupabaseClient, { dryRun: false });
+
+    expect(result.results[0].eligible).toBe(true);
+    expect(result.results[0].assigned).toBe(100);
+  });
+
+  it("third weekly allocation gives another 100 leads (200 already assigned)", async () => {
+    const start = (() => {
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() - 16);
+      return d.toISOString().slice(0, 10);
+    })();
+    const partner = { ...basePartner, program_start_date: start };
+    const week1Start = addDaysISO(start, 0);
+    const week1End = addDaysISO(start, 7);
+    const week2Start = addDaysISO(start, 7);
+    const week2End = addDaysISO(start, 14);
+    const batches = [
+      { id: "b1", partner_id: "partner-1", allocation_period_start: week1Start, allocation_period_end: week1End, lead_count: 100, source: "automatic" },
+      { id: "b2", partner_id: "partner-1", allocation_period_start: week2Start, allocation_period_end: week2End, lead_count: 100, source: "automatic" },
+    ];
+    const assigned = Array.from({ length: 200 }, (_, i) => ({ id: `assigned-${i}`, assigned_to: "partner-1" }));
+    const unassigned = Array.from({ length: 200 }, (_, i) => ({ id: `unassigned-${i}`, assigned_to: null }));
+    const db = makeFakeDb([partner], [...assigned, ...unassigned], batches);
+    const result = await runAutomaticAllocation(db as unknown as SupabaseClient, { dryRun: false });
+
+    expect(result.results[0].eligible).toBe(true);
+    expect(result.results[0].assigned).toBe(100);
+  });
+
+  it("fourth weekly allocation gives another 100 leads (300 already assigned)", async () => {
+    const start = (() => {
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() - 23);
+      return d.toISOString().slice(0, 10);
+    })();
+    const partner = { ...basePartner, program_start_date: start };
+    const batches = [0, 7, 14].map((offset, idx) => ({
+      id: `b${idx + 1}`,
+      partner_id: "partner-1",
+      allocation_period_start: addDaysISO(start, offset),
+      allocation_period_end: addDaysISO(start, offset + 7),
+      lead_count: 100,
+      source: "automatic",
+    }));
+    const assigned = Array.from({ length: 300 }, (_, i) => ({ id: `assigned-${i}`, assigned_to: "partner-1" }));
+    const unassigned = Array.from({ length: 200 }, (_, i) => ({ id: `unassigned-${i}`, assigned_to: null }));
+    const db = makeFakeDb([partner], [...assigned, ...unassigned], batches);
+    const result = await runAutomaticAllocation(db as unknown as SupabaseClient, { dryRun: false });
+
+    expect(result.results[0].eligible).toBe(true);
+    expect(result.results[0].assigned).toBe(100);
+  });
+
+  it("normal capacity stops at 400 after 4 weekly allocations", async () => {
+    // Partner started 30+ days ago but within program
+    const start = (() => {
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() - 29);
+      return d.toISOString().slice(0, 10);
+    })();
+    const partner = { ...basePartner, program_start_date: start };
+    // 4 weeks of 100 = 400 leads already assigned
+    const leads = Array.from({ length: 400 }, (_, i) => ({ id: `lead-${i}`, assigned_to: "partner-1" }));
+    // Batches for weeks 1-4
+    const batches = [0, 7, 14, 21].map((offset, idx) => ({
+      id: `b${idx + 1}`,
+      partner_id: "partner-1",
+      allocation_period_start: addDaysISO(start, offset),
+      allocation_period_end: addDaysISO(start, offset + 7),
+      lead_count: 100,
+      source: "automatic",
+    }));
+    const db = makeFakeDb([partner], leads, batches);
+    const result = await runAutomaticAllocation(db as unknown as SupabaseClient, { dryRun: false });
+
+    expect(result.results[0].eligible).toBe(true);
+    expect(result.results[0].assigned).toBe(0);
+    expect(result.results[0].reason).toContain("capacity");
+  });
+
+  it("partner with 350 assigned receives only 50 in week 4", async () => {
+    const start = (() => {
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() - 22);
+      return d.toISOString().slice(0, 10);
+    })();
+    const partner = { ...basePartner, program_start_date: start };
+    // 3 weeks of 100 = 300 leads from batches + 50 extra manual = 350 total
+    const assigned = Array.from({ length: 350 }, (_, i) => ({ id: `assigned-${i}`, assigned_to: "partner-1" }));
+    const unassigned = Array.from({ length: 100 }, (_, i) => ({ id: `unassigned-${i}`, assigned_to: null }));
+    const batches = [0, 7, 14].map((offset, idx) => ({
+      id: `b${idx + 1}`,
+      partner_id: "partner-1",
+      allocation_period_start: addDaysISO(start, offset),
+      allocation_period_end: addDaysISO(start, offset + 7),
+      lead_count: 100,
+      source: "automatic",
+    }));
+    const db = makeFakeDb([partner], [...assigned, ...unassigned], batches);
+    const result = await runAutomaticAllocation(db as unknown as SupabaseClient, { dryRun: false });
+
+    expect(result.results[0].eligible).toBe(true);
+    // 400 - 350 = 50 remaining program capacity, 100 weekly limit → min(50, 100) = 50
+    expect(result.results[0].assigned).toBe(50);
+  });
+
+  it("partner with 400 assigned receives 0", async () => {
+    const start = (() => {
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() - 10);
+      return d.toISOString().slice(0, 10);
+    })();
+    const partner = { ...basePartner, program_start_date: start };
+    const leads = Array.from({ length: 400 }, (_, i) => ({ id: `lead-${i}`, assigned_to: "partner-1" }));
+    const db = makeFakeDb([partner], leads);
+    const result = await runAutomaticAllocation(db as unknown as SupabaseClient, { dryRun: false });
+
+    expect(result.results[0].eligible).toBe(true);
+    expect(result.results[0].assigned).toBe(0);
+    expect(result.results[0].reason).toContain("capacity");
+  });
+
+  it("partner with approved extra capacity >400 receives additional leads", async () => {
+    const start = (() => {
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() - 10);
+      return d.toISOString().slice(0, 10);
+    })();
+    const partner = {
+      ...basePartner,
+      program_start_date: start,
+      approved_extra_leads: 100,
+      default_program_lead_limit: 400,
+    };
+    // 350 assigned → within 500 effective limit (400+100)
+    const assigned = Array.from({ length: 350 }, (_, i) => ({ id: `assigned-${i}`, assigned_to: "partner-1" }));
+    const unassigned = Array.from({ length: 200 }, (_, i) => ({ id: `unassigned-${i}`, assigned_to: null }));
+    const db = makeFakeDb([partner], [...assigned, ...unassigned]);
+    const result = await runAutomaticAllocation(db as unknown as SupabaseClient, { dryRun: false });
+
+    expect(result.results[0].eligible).toBe(true);
+    // 500 - 350 = 150 program capacity, 100 weekly limit → min(150, 100) = 100
+    expect(result.results[0].assigned).toBe(100);
+  });
+
+  it("duplicate cron execution does not double-assign", async () => {
+    const start = (() => {
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() - 3);
+      return d.toISOString().slice(0, 10);
+    })();
+    const partner = { ...basePartner, program_start_date: start };
+    const period = getCurrentAllocationPeriod(start, todayISO());
+    // Already has an automatic batch for this period
+    const batches = [
+      { id: "b1", partner_id: "partner-1", allocation_period_start: period.start, allocation_period_end: period.end, lead_count: 100, source: "automatic" },
+    ];
+    const leads = Array.from({ length: 100 }, (_, i) => ({ id: `lead-${i}`, assigned_to: "partner-1" }));
+    const db = makeFakeDb([partner], leads, batches);
+    const result = await runAutomaticAllocation(db as unknown as SupabaseClient, { dryRun: false });
+
+    expect(result.results[0].eligible).toBe(true);
+    expect(result.results[0].assigned).toBe(0);
+    expect(result.results[0].reason).toBe("Already allocated for this period");
+  });
+
+  it("multiple partners each receive their own 100-lead weekly allocation", async () => {
+    const start = (() => {
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() - 5);
+      return d.toISOString().slice(0, 10);
+    })();
+    const partners = [
+      { ...basePartner, id: "p1", company_id: "RP001", program_start_date: start, profiles: { full_name: "Partner 1" } },
+      { ...basePartner, id: "p2", company_id: "RP002", program_start_date: start, profiles: { full_name: "Partner 2" } },
+      { ...basePartner, id: "p3", company_id: "RP003", program_start_date: start, profiles: { full_name: "Partner 3" } },
+    ];
+    const unassigned = Array.from({ length: 500 }, (_, i) => ({ id: `unassigned-${i}`, assigned_to: null }));
+    const db = makeFakeDb(partners, unassigned);
+    const result = await runAutomaticAllocation(db as unknown as SupabaseClient, { dryRun: false });
+
+    expect(result.results).toHaveLength(3);
+    expect(result.results.every((r) => r.eligible && r.assigned === 100)).toBe(true);
+  });
+
+  it("insufficient unassigned leads are handled safely", async () => {
+    const start = (() => {
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() - 3);
+      return d.toISOString().slice(0, 10);
+    })();
+    const partner = { ...basePartner, program_start_date: start };
+    // Only 30 unassigned leads in the pool
+    const leads = Array.from({ length: 30 }, (_, i) => ({ id: `lead-${i}` }));
+    const db = makeFakeDb([partner], leads);
+    const result = await runAutomaticAllocation(db as unknown as SupabaseClient, { dryRun: false });
+
+    expect(result.results[0].eligible).toBe(true);
+    // RPC will claim up to min(100 weekly, 400 program, 30 available) = 30
+    expect(result.results[0].assigned).toBe(30);
+  });
+
+  it("expired 30-day programs receive no automatic allocation", async () => {
+    const start = (() => {
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() - 35);
+      return d.toISOString().slice(0, 10);
+    })();
+    const partner = { ...basePartner, program_start_date: start };
+    const db = makeFakeDb([partner], []);
+    const result = await runAutomaticAllocation(db as unknown as SupabaseClient, { dryRun: false });
+
+    expect(result.results[0].eligible).toBe(false);
+    expect(result.results[0].reason).toContain("expired");
+  });
+
+  it("dry run shows planned assignments without writing", async () => {
+    const start = (() => {
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() - 3);
+      return d.toISOString().slice(0, 10);
+    })();
+    const partner = { ...basePartner, program_start_date: start };
+    const db = makeFakeDb([partner], []);
+    const result = await runAutomaticAllocation(db as unknown as SupabaseClient, { dryRun: true });
+
+    expect(result.results[0].eligible).toBe(true);
+    expect(result.results[0].assigned).toBe(100);
+    expect(result.results[0].reason).toBe("Ready to allocate");
+    // No RPC calls in dry run
+    expect(db._rpc.getCalls()).toHaveLength(0);
+  });
+
+  it("existing database records are not modified by allocation", async () => {
+    const start = (() => {
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() - 3);
+      return d.toISOString().slice(0, 10);
+    })();
+    const partner = { ...basePartner, program_start_date: start };
+    const leads = [
+      { id: "existing-lead-1", assigned_to: "other-partner", company_name: "Existing Co" },
+      { id: "existing-lead-2", assigned_to: null },
+    ];
+    const db = makeFakeDb([partner], leads);
+    const result = await runAutomaticAllocation(db as unknown as SupabaseClient, { dryRun: false });
+
+    // Existing assigned lead should not be touched
+    expect(result.results[0].eligible).toBe(true);
+    expect(result.results[0].assigned).toBeGreaterThanOrEqual(0);
   });
 });

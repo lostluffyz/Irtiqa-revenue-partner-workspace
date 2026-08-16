@@ -138,7 +138,7 @@ export default function AllocationPage() {
         <div>
           <h1 className="text-2xl font-semibold text-[var(--text-1)]">Lead Allocation</h1>
           <p className="text-sm text-[var(--text-3)] mt-1">
-            Automatic 30-day program allocation • 100 leads/week • Daily scheduler at 06:00 UTC
+            Weekly allocation: 100 leads/partner • Normal capacity: 400 leads • Program: 30 days • Cron: Monday 06:00 UTC
           </p>
         </div>
         <div className="flex gap-2">
