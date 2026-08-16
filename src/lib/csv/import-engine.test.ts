@@ -532,8 +532,12 @@ describe("ALLOWED_CSV_FIELDS", () => {
     expect(ALLOWED_CSV_FIELDS.has("assigned_to")).toBe(false);
   });
 
-  it("does NOT include city (recognition-only)", () => {
-    expect(ALLOWED_CSV_FIELDS.has("city")).toBe(false);
+  it("DOES include city (stored since migration 007)", () => {
+    expect(ALLOWED_CSV_FIELDS.has("city")).toBe(true);
+  });
+
+  it("DOES include state (stored since migration 007)", () => {
+    expect(ALLOWED_CSV_FIELDS.has("state")).toBe(true);
   });
 
   it("does NOT include google_maps_url (recognition-only)", () => {
@@ -544,10 +548,10 @@ describe("ALLOWED_CSV_FIELDS", () => {
     expect(ALLOWED_CSV_FIELDS.has("linkedin_url")).toBe(false);
   });
 
-  it("has exactly 7 stored fields", () => {
+  it("has exactly 9 stored fields (company_name, website, phone, email, industry, country, internal_notes, city, state)", () => {
     let count = 0;
     for (const _ of ALLOWED_CSV_FIELDS) count++;
-    expect(count).toBe(7);
+    expect(count).toBe(9);
   });
 });
 
@@ -612,7 +616,7 @@ describe("buildCanonicalRows — injection protection", () => {
     expect(result.validRows[0]).not.toHaveProperty("auth_user_id");
   });
 
-  it("does not insert recognition-only fields (city)", () => {
+  it("does insert city (now a stored field since migration 007)", () => {
     const result = buildCanonicalRows(
       [["Acme Corp", "New York"]],
       ["company_name", "city"],
@@ -621,8 +625,8 @@ describe("buildCanonicalRows — injection protection", () => {
       "admin-uuid",
     );
     expect(result.validCount).toBe(1);
-    // 'city' is recognition-only; should NOT appear in insert object
-    expect(result.validRows[0]).not.toHaveProperty("city");
+    // 'city' is now a stored field; should appear in insert object
+    expect(result.validRows[0]).toHaveProperty("city", "New York");
   });
 
   it("does not insert google_maps_url (recognition-only)", () => {

@@ -67,3 +67,35 @@ export type AllocationBatch = GeneratedDatabase["public"]["Tables"]["lead_alloca
 export type AllocationBatchInsert = GeneratedDatabase["public"]["Tables"]["lead_allocation_batches"]["Insert"];
 export type AllocationApproval = GeneratedDatabase["public"]["Tables"]["lead_allocation_approvals"]["Row"];
 export type AllocationApprovalInsert = GeneratedDatabase["public"]["Tables"]["lead_allocation_approvals"]["Insert"];
+
+// ---- Scrape Job types ----
+
+export type ScrapeJobStatus =
+  | "pending"
+  | "running"
+  | "completed"
+  | "partial"
+  | "failed"
+  | "cancelled";
+
+export type ScrapeJob = {
+  id: string;
+  status: ScrapeJobStatus;
+  query: string;
+  location: string;
+  requested_count: number;
+  extract_emails: boolean;
+  dry_run: boolean;
+  scraped_count: number;
+  valid_count: number;
+  inserted_count: number;
+  duplicate_count: number;
+  skipped_count: number;
+  error_count: number;
+  workflow_run_id: string | null;
+  created_by: string;
+  created_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+  error_message: string | null;
+};
