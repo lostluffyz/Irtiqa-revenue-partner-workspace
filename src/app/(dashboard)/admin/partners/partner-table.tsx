@@ -129,8 +129,8 @@ function PartnerCard({
             )}
           </div>
 
-          {/* Row 2: Metadata — recedes visually */}
-          <div className="flex items-center gap-1.5 mt-0.5">
+          {/* Row 2: one tidy meta row, inside the card on all sizes */}
+          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 mt-0.5">
             <code
               className="dl-type-micro normal-case tracking-normal"
               style={{ fontFamily: "var(--font-mono)" }}
@@ -147,8 +147,8 @@ function PartnerCard({
             )}
             {partner.regions && (
               <>
-                <span className="dl-type-micro text-[var(--text-3)] hidden sm:inline">·</span>
-                <span className="hidden sm:inline-flex items-center gap-1 dl-type-caption text-[var(--text-3)]">
+                <span className="dl-type-micro text-[var(--text-3)]">·</span>
+                <span className="inline-flex items-center gap-1 dl-type-caption text-[var(--text-3)]">
                   <MapPin className="h-3 w-3" />
                   {partner.regions.name}
                 </span>
@@ -156,8 +156,8 @@ function PartnerCard({
             )}
             {partner.status === "active" && partner.reportStatus ? (
               <>
-                <span className="dl-type-micro text-[var(--text-3)] hidden sm:inline">·</span>
-                <span className="hidden sm:inline-flex items-center gap-1.5">
+                <span className="dl-type-micro text-[var(--text-3)]">·</span>
+                <span className="inline-flex items-center gap-1.5">
                   <span className="dl-type-micro normal-case tracking-normal text-[var(--text-3)]">
                     Report
                   </span>
@@ -166,8 +166,8 @@ function PartnerCard({
               </>
             ) : partner.status !== "active" ? (
               <>
-                <span className="dl-type-micro text-[var(--text-3)] hidden sm:inline">·</span>
-                <span className="hidden sm:inline-flex items-center gap-1.5">
+                <span className="dl-type-micro text-[var(--text-3)]">·</span>
+                <span className="inline-flex items-center gap-1.5">
                   <span className="dl-type-micro normal-case tracking-normal text-[var(--text-3)]">
                     Report
                   </span>
@@ -175,6 +175,10 @@ function PartnerCard({
                 </span>
               </>
             ) : null}
+            <span className="dl-type-micro text-[var(--text-3)] md:hidden">·</span>
+            <span className="dl-type-caption text-[var(--text-3)] tabular-nums md:hidden">
+              {partner.leadCount} leads
+            </span>
           </div>
         </DataCardColumn>
 
@@ -209,21 +213,6 @@ function PartnerCard({
           <ChevronRight className="h-4 w-4 shrink-0 text-[var(--text-3)]" aria-hidden="true" />
         </div>
       </DataCard>
-
-      {/* Mobile extras */}
-      <div className="flex md:hidden items-center gap-2 ml-[52px] mt-1 mb-2">
-        {partner.status !== "active" && (
-          <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
-        )}
-        {partner.status === "active" && partner.reportStatus ? (
-          <ReportStatusChip status={partner.reportStatus} />
-        ) : partner.status !== "active" ? (
-          <span className="dl-type-caption text-[var(--text-3)]" title="Not tracked for inactive partners">Report —</span>
-        ) : null}
-        <span className="dl-type-caption text-[var(--text-3)] tabular-nums">
-          {partner.leadCount} leads
-        </span>
-      </div>
     </div>
   );
 }

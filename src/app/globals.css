@@ -1618,6 +1618,7 @@ body {
   .login-loading-overlay { animation: none !important; }
   .route-progress-container { animation: none !important; }
   .route-progress-bar { transition: none !important; }
+  .pulse-dot { animation: none !important; }
   .btn-hover-lift { transition: none !important; }
   .btn-hover-lift:hover:not(:disabled) { transform: none !important; }
   .btn-hover-lift:active:not(:disabled) { transform: none !important; }
@@ -2004,6 +2005,16 @@ body {
   }
   .chip-row-fade::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Running-job pulse dot — opacity only, text is never affected;
+     fully static under prefers-reduced-motion. */
+  @keyframes pulseDot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+  .pulse-dot {
+    animation: pulseDot 1.6s ease-in-out infinite;
   }
 
   /* Industry subtitle hides once the Industry column itself is visible (≥1500px).

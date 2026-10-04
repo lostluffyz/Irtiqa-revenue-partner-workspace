@@ -332,3 +332,78 @@ export function formatWebsiteHostname(url: string): string {
     return trimmed;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Short Dates — Timezone-safe display for program/allocation dates
+   ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Format a plain YYYY-MM-DD date as "Sep 14" without timezone shifting.
+ * Never uses `new Date("YYYY-MM-DD")` (UTC-midnight parsing shifts the day
+ * in negative-offset timezones when formatted locally).
+ *
+ * @returns "Sep 14", or the input as-is when invalid
+ */
+export function formatShortMonthDay(dateStr: string): string {
+  const parts = parseDateParts(dateStr.trim());
+  if (!parts) return dateStr;
+  return `${SHORT_MONTHS[parts.m - 1]} ${parts.d}`;
+}
+
+/**
+ * Format a plain-date range as "Oct 2 – Oct 9" without timezone shifting.
+ */
+export function formatShortDateRange(start: string, end: string): string {
+  return `${formatShortMonthDay(start)} – ${formatShortMonthDay(end)}`;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Job Timestamps — Explicit-timezone display for scrape jobs
+   ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Format a full ISO timestamp as "Oct 4, 6:16 PM" (no zone suffix).
+ *
+ * The zone is shown once in the column header (see getViewerShortZoneName),
+ * so cells stay short enough to never clip. The full timestamp with zone
+ * always goes in the cell's title tooltip.
+ *
+ * Full timestamps (with time) are safe for `new Date` — only plain
+ * YYYY-MM-DD strings shift.
+ *
+ * @param iso - full ISO timestamp from the database
+ * @param timeZone - IANA zone override (defaults to the viewer's locale);
+ *   pass "UTC" in tests for determinism
+ * @returns formatted string, or the input as-is when invalid
+ */
+export function formatJobDateTime(iso: string, timeZone?: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  const opts = timeZone ? { timeZone } : {};
+  const datePart = date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    ...opts,
+  });
+  const timePart = date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    ...opts,
+  });
+  return `${datePart}, ${timePart}`;
+}
+
+/**
+ * Short display name of a timezone ("IST", "GMT+5:30", "UTC").
+ * Used once in table headers so cells don't repeat it per row.
+ *
+ * @param now - reference date (defaults to now; inject for tests)
+ * @param timeZone - IANA zone to name (defaults to the viewer's locale)
+ */
+export function getViewerShortZoneName(now: Date = new Date(), timeZone?: string): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZoneName: "short",
+    ...(timeZone !== undefined ? { timeZone } : {}),
+  }).formatToParts(now);
+  return parts.find((p) => p.type === "timeZoneName")?.value ?? "";
+}

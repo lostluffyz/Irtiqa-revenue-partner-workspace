@@ -163,7 +163,7 @@ export default async function LeadsPage({
       {/* ═══════════════════════════════════════════════════════════
           STATS ROW — Pure numbers, no icons (consistent with Partners)
           ═══════════════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 [&>*:last-child]:col-span-2 lg:[&>*:last-child]:col-span-1">
         <StatCard value={aggregateStats.total} label="Total" />
         <StatCard value={aggregateStats.total - aggregateStats.unassigned} label="Assigned" />
         <StatCard

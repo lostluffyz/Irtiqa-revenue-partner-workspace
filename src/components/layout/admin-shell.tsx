@@ -447,8 +447,10 @@ export function AdminShell({
   const toggleMobile = useCallback(() => setMobileOpen(prev => !prev), []);
   const crumbs = getBreadcrumbSegments(pathname);
   // Leads carries the densest table in the app — allow it a wider container.
+  // Allocation's 7-column report needs the same room.
   // Every other route keeps the default readable measure.
-  const isWideRoute = pathname.startsWith("/admin/leads");
+  const isWideRoute =
+    pathname.startsWith("/admin/leads") || pathname.startsWith("/admin/allocation");
 
   // Hide the loading overlay when the admin shell mounts
   useEffect(() => {

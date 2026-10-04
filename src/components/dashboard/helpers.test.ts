@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatReportDate, getBreadcrumbSegments, formatWebsiteHostname } from "./helpers";
+import { formatReportDate, getBreadcrumbSegments, formatWebsiteHostname, formatShortMonthDay, formatShortDateRange, formatJobDateTime, getViewerShortZoneName } from "./helpers";
 
 describe("formatReportDate", () => {
   it("returns Today for the reference date", () => {
@@ -75,6 +75,23 @@ describe("formatWebsiteHostname", () => {
   });
 });
 
+describe("formatShortMonthDay / formatShortDateRange", () => {  it("formats plain dates without timezone shifting", () => {
+    expect(formatShortMonthDay("2026-09-14")).toBe("Sep 14");
+    expect(formatShortMonthDay("2026-01-05")).toBe("Jan 5");
+    expect(formatShortDateRange("2026-10-02", "2026-10-09")).toBe("Oct 2 – Oct 9");
+  });
+
+  it("handles month and year boundaries", () => {
+    expect(formatShortDateRange("2025-12-30", "2026-01-06")).toBe("Dec 30 – Jan 6");
+    expect(formatShortMonthDay("2024-02-29")).toBe("Feb 29");
+  });
+
+  it("returns invalid input unchanged", () => {
+    expect(formatShortMonthDay("nope")).toBe("nope");
+    expect(formatShortDateRange("2026-13-01", "2026-10-09")).toBe("2026-13-01 – Oct 9");
+  });
+});
+
 describe("getBreadcrumbSegments", () => {
   it("maps admin routes to section + page", () => {
     expect(getBreadcrumbSegments("/admin")).toEqual({ section: "Admin", page: "Dashboard" });
@@ -98,5 +115,32 @@ describe("getBreadcrumbSegments", () => {
     expect(getBreadcrumbSegments("/partner/progress")).toEqual({ section: "Partner", page: "Progress" });
     expect(getBreadcrumbSegments("/partner/announcements")).toEqual({ section: "Partner", page: "Announcements" });
     expect(getBreadcrumbSegments("/partner/resources")).toEqual({ section: "Partner", page: "Resources" });
+  });
+});
+
+describe("formatJobDateTime", () => {
+  it("formats a full timestamp without a zone suffix (UTC pinned)", () => {
+    expect(formatJobDateTime("2026-10-04T12:30:00Z", "UTC")).toBe("Oct 4, 12:30 PM");
+    expect(formatJobDateTime("2026-01-05T08:05:00Z", "UTC")).toBe("Jan 5, 8:05 AM");
+  });
+
+  it("handles month and year boundaries", () => {
+    expect(formatJobDateTime("2025-12-31T23:45:00Z", "UTC")).toBe("Dec 31, 11:45 PM");
+    expect(formatJobDateTime("2026-01-01T00:05:00Z", "UTC")).toBe("Jan 1, 12:05 AM");
+  });
+
+  it("returns invalid input unchanged", () => {
+    expect(formatJobDateTime("not-a-date", "UTC")).toBe("not-a-date");
+    expect(formatJobDateTime("", "UTC")).toBe("");
+  });
+});
+
+describe("getViewerShortZoneName", () => {
+  it("names an explicit zone deterministically", () => {
+    expect(getViewerShortZoneName(new Date("2026-10-04T12:00:00Z"), "UTC")).toBe("UTC");
+  });
+
+  it("returns a non-empty name for the viewer locale", () => {
+    expect(getViewerShortZoneName().length).toBeGreaterThan(0);
   });
 });

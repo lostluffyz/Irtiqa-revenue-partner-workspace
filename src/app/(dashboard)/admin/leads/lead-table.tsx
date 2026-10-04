@@ -773,6 +773,8 @@ export function LeadTable({
           </div>
         </div>
       )}
+      {/* Clearance so the sticky pagination never covers the last card */}
+      <div aria-hidden="true" className="h-3" />
     </div>
   );
 }
