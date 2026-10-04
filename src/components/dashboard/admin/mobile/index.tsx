@@ -16,9 +16,9 @@ export function MobileAdminDashboard({ data }: { data: AdminDashboardData }) {
       <DashboardEntrance delay={0}>
         <MobileHero
           firstName={data.firstName}
-          unassignedLeads={data.counts.unassignedLeads}
           reportsToday={data.counts.reportsToday}
           appointmentsToday={data.counts.appointmentsToday}
+          activePartners={data.counts.activePartners}
         />
       </DashboardEntrance>
 

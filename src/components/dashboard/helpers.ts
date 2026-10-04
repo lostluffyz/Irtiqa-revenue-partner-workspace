@@ -7,15 +7,19 @@
 import React from "react";
 import {
   Users,
-  Target,
-  FileText,
   Megaphone,
   Activity,
+  ClipboardCheck,
+  StickyNote,
+  ArrowLeftRight,
+  CalendarCheck,
+  Globe,
 } from "lucide-react";
 import type { DailyReport, Announcement, PartnerActivityLog } from "@/types/database";
 
 // Re-export non-server timezone utils
 export { formatDeadlineTime, formatDeadlineInTimezone, getBusinessDate } from "@/lib/program-timezone";
+import { getBusinessDate } from "@/lib/program-timezone";
 
 // PROGRAM_TIMEZONE: defined here (not imported from @/lib/partner which has server-only deps)
 // In Next.js, process.env values are inlined at build time for both server and client.
@@ -100,11 +104,17 @@ export function getAdminGreeting(): string {
 }
 
 export function getActivityIcon(action: string): { icon: React.ReactNode; color: string; bg: string } {
-  if (action.includes("partner")) return { icon: React.createElement(Users, { className: "h-3.5 w-3.5" }), color: "text-blue-600", bg: "bg-blue-50" };
-  if (action.includes("lead")) return { icon: React.createElement(Target, { className: "h-3.5 w-3.5" }), color: "text-purple-600", bg: "bg-purple-50" };
-  if (action.includes("report")) return { icon: React.createElement(FileText, { className: "h-3.5 w-3.5" }), color: "text-emerald-600", bg: "bg-emerald-50" };
-  if (action.includes("announcement")) return { icon: React.createElement(Megaphone, { className: "h-3.5 w-3.5" }), color: "text-amber-600", bg: "bg-amber-50" };
-  return { icon: React.createElement(Activity, { className: "h-3.5 w-3.5" }), color: "text-gray-500", bg: "bg-gray-50" };
+  // Distinct glyph per event kind, single neutral tile — color is reserved for status.
+  const neutral = { color: "text-[var(--text-2)]", bg: "bg-[var(--hover-bg)]" };
+  const props = { className: "h-3.5 w-3.5" };
+  if (action.includes("lead_notes")) return { icon: React.createElement(StickyNote, props), ...neutral };
+  if (action.includes("lead")) return { icon: React.createElement(ArrowLeftRight, props), ...neutral };
+  if (action.includes("report")) return { icon: React.createElement(ClipboardCheck, props), ...neutral };
+  if (action.includes("partner")) return { icon: React.createElement(Users, props), ...neutral };
+  if (action.includes("announcement")) return { icon: React.createElement(Megaphone, props), ...neutral };
+  if (action.includes("allocation")) return { icon: React.createElement(CalendarCheck, props), ...neutral };
+  if (action.includes("scrape")) return { icon: React.createElement(Globe, props), ...neutral };
+  return { icon: React.createElement(Activity, props), ...neutral };
 }
 
 export function getRelativeTime(dateStr: string): string {
@@ -193,3 +203,107 @@ export const PIPELINE_LABELS: Record<string, string> = {
 };
 
 export const PIPELINE_STATUSES = ["not_contacted", "contacted", "follow_up_required", "appointment_booked", "closed"] as const;
+
+/* ═══════════════════════════════════════════════════════════════
+   Breadcrumbs — Display-only route labels for shell headers
+   ═══════════════════════════════════════════════════════════════ */
+
+export interface BreadcrumbSegments {
+  section: string;
+  page: string;
+}
+
+const ADMIN_ROUTES: Array<{ prefix: string; page: string }> = [
+  { prefix: "/admin/partners/create", page: "Add Partner" },
+  { prefix: "/admin/partners/", page: "Partner Details" },
+  { prefix: "/admin/partners", page: "Partners" },
+  { prefix: "/admin/leads/upload", page: "Upload Leads" },
+  { prefix: "/admin/leads", page: "Leads" },
+  { prefix: "/admin/allocation", page: "Allocation" },
+  { prefix: "/admin/scrape", page: "Lead Scraper" },
+  { prefix: "/admin/reports", page: "Reports" },
+  { prefix: "/admin/activity", page: "Activity" },
+  { prefix: "/admin/announcements/new", page: "New Announcement" },
+  { prefix: "/admin/announcements/edit", page: "Edit Announcement" },
+  { prefix: "/admin/announcements", page: "Announcements" },
+  { prefix: "/admin/resources/new", page: "New Resource" },
+  { prefix: "/admin/resources/edit", page: "Edit Resource" },
+  { prefix: "/admin/resources", page: "Resources" },
+  { prefix: "/admin", page: "Dashboard" },
+];
+
+const PARTNER_ROUTES: Array<{ prefix: string; page: string }> = [
+  { prefix: "/partner/leads", page: "My Leads" },
+  { prefix: "/partner/report", page: "Daily Report" },
+  { prefix: "/partner/progress", page: "Progress" },
+  { prefix: "/partner/announcements", page: "Announcements" },
+  { prefix: "/partner/resources", page: "Resources" },
+  { prefix: "/partner", page: "Dashboard" },
+];
+
+/**
+ * Map the current pathname to [section, page] labels for the shell header.
+ * Pure display function — no routing or auth implications.
+ */
+export function getBreadcrumbSegments(pathname: string): BreadcrumbSegments {
+  const isAdmin = pathname.startsWith("/admin");
+  const routes = isAdmin ? ADMIN_ROUTES : PARTNER_ROUTES;
+  for (const route of routes) {
+    if (
+      pathname === route.prefix ||
+      pathname.startsWith(route.prefix + "/") ||
+      (route.prefix.endsWith("/") && pathname.startsWith(route.prefix))
+    ) {
+      return { section: isAdmin ? "Admin" : "Partner", page: route.page };
+    }
+  }
+  return { section: isAdmin ? "Admin" : "Partner", page: "Dashboard" };
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Report Dates — Timezone-safe display formatting
+   ═══════════════════════════════════════════════════════════════ */
+
+const SHORT_MONTHS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+] as const;
+
+function parseDateParts(dateStr: string): { y: number; m: number; d: number } | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr.trim());
+  if (!match) return null;
+  const y = parseInt(match[1], 10);
+  const m = parseInt(match[2], 10);
+  const d = parseInt(match[3], 10);
+  if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+  return { y, m, d };
+}
+
+/**
+ * Format a plain YYYY-MM-DD report_date for display without timezone shift.
+ *
+ * Never uses `new Date("YYYY-MM-DD")` (UTC-midnight parsing shifts the day
+ * in positive-offset timezones). Day arithmetic uses Date.UTC noon-safe math.
+ *
+ * @param reportDate - plain date string (YYYY-MM-DD)
+ * @param todayStr - reference "today" (defaults to program business date);
+ *   injectable for tests
+ * @returns "Today" | "Yesterday" | "Oct 2" | "Oct 2, 2025" (or input as-is if invalid)
+ */
+export function formatReportDate(reportDate: string, todayStr?: string): string {
+  const parts = parseDateParts(reportDate);
+  if (!parts) return reportDate;
+
+  const today = parseDateParts((todayStr ?? getBusinessDate()).trim());
+  if (!today) return `${SHORT_MONTHS[parts.m - 1]} ${parts.d}`;
+
+  const dayMs = 86400000;
+  const diffDays = Math.round(
+    (Date.UTC(today.y, today.m - 1, today.d) - Date.UTC(parts.y, parts.m - 1, parts.d)) / dayMs,
+  );
+
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (parts.y === today.y) return `${SHORT_MONTHS[parts.m - 1]} ${parts.d}`;
+  return `${SHORT_MONTHS[parts.m - 1]} ${parts.d}, ${parts.y}`;
+}

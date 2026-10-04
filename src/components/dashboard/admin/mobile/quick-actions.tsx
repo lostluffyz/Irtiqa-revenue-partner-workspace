@@ -8,7 +8,7 @@ export function MobileQuickActions() {
     <div className="mobile-action-grid">
       <Link href="/admin/leads/upload" className="mobile-action-card mobile-card-press">
         <div className="mobile-action-icon">
-          <Upload className="h-5 w-5 text-[var(--accent)]" />
+          <Upload className="h-5 w-5 text-[var(--text-2)]" />
         </div>
         <p className="mobile-action-label">Upload CSV</p>
         <p className="mobile-action-sub">Import leads</p>
@@ -16,7 +16,7 @@ export function MobileQuickActions() {
 
       <Link href="/admin/partners/create" className="mobile-action-card mobile-card-press">
         <div className="mobile-action-icon">
-          <Plus className="h-5 w-5 text-[var(--status-success)]" />
+          <Plus className="h-5 w-5 text-[var(--text-2)]" />
         </div>
         <p className="mobile-action-label">Add Partner</p>
         <p className="mobile-action-sub">New revenue partner</p>
@@ -24,7 +24,7 @@ export function MobileQuickActions() {
 
       <Link href="/admin/announcements/new" className="mobile-action-card mobile-card-press">
         <div className="mobile-action-icon">
-          <Megaphone className="h-5 w-5 text-[var(--status-warning)]" />
+          <Megaphone className="h-5 w-5 text-[var(--text-2)]" />
         </div>
         <p className="mobile-action-label">Announcement</p>
         <p className="mobile-action-sub">Publish update</p>
@@ -32,7 +32,7 @@ export function MobileQuickActions() {
 
       <Link href="/admin/reports" className="mobile-action-card mobile-card-press">
         <div className="mobile-action-icon">
-          <Eye className="h-5 w-5 text-purple-600" />
+          <Eye className="h-5 w-5 text-[var(--text-2)]" />
         </div>
         <p className="mobile-action-label">View Reports</p>
         <p className="mobile-action-sub">Daily activity</p>

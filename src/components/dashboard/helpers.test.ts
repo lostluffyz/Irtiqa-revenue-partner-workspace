@@ -1,0 +1,75 @@
+import { describe, it, expect } from "vitest";
+import { formatReportDate, getBreadcrumbSegments } from "./helpers";
+
+describe("formatReportDate", () => {
+  it("returns Today for the reference date", () => {
+    expect(formatReportDate("2026-10-04", "2026-10-04")).toBe("Today");
+  });
+
+  it("returns Yesterday for the previous day", () => {
+    expect(formatReportDate("2026-10-03", "2026-10-04")).toBe("Yesterday");
+  });
+
+  it("handles month boundaries", () => {
+    expect(formatReportDate("2026-09-30", "2026-10-01")).toBe("Yesterday");
+    expect(formatReportDate("2026-09-28", "2026-10-04")).toBe("Sep 28");
+  });
+
+  it("handles year boundaries", () => {
+    expect(formatReportDate("2025-12-31", "2026-01-01")).toBe("Yesterday");
+    expect(formatReportDate("2025-12-25", "2026-01-04")).toBe("Dec 25, 2025");
+  });
+
+  it("handles leap days", () => {
+    expect(formatReportDate("2024-02-29", "2024-03-01")).toBe("Yesterday");
+    expect(formatReportDate("2024-02-29", "2024-03-05")).toBe("Feb 29");
+  });
+
+  it("omits the year within the same year, includes it otherwise", () => {
+    expect(formatReportDate("2026-10-02", "2026-10-04")).toBe("Oct 2");
+    expect(formatReportDate("2025-10-02", "2026-10-04")).toBe("Oct 2, 2025");
+  });
+
+  it("returns future dates as month/day without Today/Yesterday", () => {
+    expect(formatReportDate("2026-10-05", "2026-10-04")).toBe("Oct 5");
+  });
+
+  it("returns invalid input unchanged", () => {
+    expect(formatReportDate("not-a-date", "2026-10-04")).toBe("not-a-date");
+    expect(formatReportDate("", "2026-10-04")).toBe("");
+    expect(formatReportDate("2026-13-01", "2026-10-04")).toBe("2026-13-01");
+  });
+
+  it("never shifts the day via timezone parsing", () => {
+    // A naive new Date("2026-10-02") renders Oct 1 east of UTC;
+    // the formatter must not do that regardless of runtime TZ.
+    expect(formatReportDate("2026-10-02", "2026-10-02")).toBe("Today");
+    expect(formatReportDate("2026-01-01", "2026-06-15")).toBe("Jan 1");
+  });
+});
+
+describe("getBreadcrumbSegments", () => {
+  it("maps admin routes to section + page", () => {
+    expect(getBreadcrumbSegments("/admin")).toEqual({ section: "Admin", page: "Dashboard" });
+    expect(getBreadcrumbSegments("/admin/partners")).toEqual({ section: "Admin", page: "Partners" });
+    expect(getBreadcrumbSegments("/admin/partners/create")).toEqual({ section: "Admin", page: "Add Partner" });
+    expect(getBreadcrumbSegments("/admin/partners/some-uuid")).toEqual({ section: "Admin", page: "Partner Details" });
+    expect(getBreadcrumbSegments("/admin/leads")).toEqual({ section: "Admin", page: "Leads" });
+    expect(getBreadcrumbSegments("/admin/leads/upload")).toEqual({ section: "Admin", page: "Upload Leads" });
+    expect(getBreadcrumbSegments("/admin/allocation")).toEqual({ section: "Admin", page: "Allocation" });
+    expect(getBreadcrumbSegments("/admin/scrape")).toEqual({ section: "Admin", page: "Lead Scraper" });
+    expect(getBreadcrumbSegments("/admin/reports")).toEqual({ section: "Admin", page: "Reports" });
+    expect(getBreadcrumbSegments("/admin/activity")).toEqual({ section: "Admin", page: "Activity" });
+    expect(getBreadcrumbSegments("/admin/announcements/new")).toEqual({ section: "Admin", page: "New Announcement" });
+    expect(getBreadcrumbSegments("/admin/resources")).toEqual({ section: "Admin", page: "Resources" });
+  });
+
+  it("maps partner routes to section + page", () => {
+    expect(getBreadcrumbSegments("/partner")).toEqual({ section: "Partner", page: "Dashboard" });
+    expect(getBreadcrumbSegments("/partner/leads")).toEqual({ section: "Partner", page: "My Leads" });
+    expect(getBreadcrumbSegments("/partner/report")).toEqual({ section: "Partner", page: "Daily Report" });
+    expect(getBreadcrumbSegments("/partner/progress")).toEqual({ section: "Partner", page: "Progress" });
+    expect(getBreadcrumbSegments("/partner/announcements")).toEqual({ section: "Partner", page: "Announcements" });
+    expect(getBreadcrumbSegments("/partner/resources")).toEqual({ section: "Partner", page: "Resources" });
+  });
+});

@@ -12,6 +12,7 @@ import { PageTransition } from "@/components/ui/page-transition";
 import { Avatar } from "@/components/ui/avatar";
 import { Brand } from "@/components/ui/brand";
 import { SafeLiveClock } from "@/components/ui/safe-live-clock";
+import { getBreadcrumbSegments } from "@/components/dashboard/helpers";
 import {
   LayoutDashboard,
   Users,
@@ -79,7 +80,9 @@ function NavLink({
   return (
     <Link
       href={item.href}
-      className={`relative flex items-center text-[13px] transition-colors duration-150 rounded-[8px] mb-0.5 ${
+      aria-current={active ? "page" : undefined}
+      aria-label={item.label}
+      className={`relative flex items-center text-[13px] transition-colors duration-150 rounded-[8px] mb-0.5 focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-[-2px] ${
         collapsed
           ? "justify-center h-[36px]"
           : "gap-2.5 px-3 py-[7px]"
@@ -95,6 +98,12 @@ function NavLink({
           layoutId={layoutId}
           className="absolute inset-0 bg-[var(--hover-bg)] rounded-[8px]"
           transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+        />
+      )}
+      {active && (
+        <span
+          aria-hidden="true"
+          className="absolute left-[3px] top-[7px] bottom-[7px] z-10 w-[3px] rounded-full bg-[var(--accent)]"
         />
       )}
       <item.icon
@@ -178,7 +187,7 @@ function DesktopSidebar({
       </div>
 
       {/* ── Navigation ── */}
-      <nav className="flex-1 overflow-y-auto px-3 pt-2 pb-3">
+      <nav className="flex-1 overflow-y-auto px-3 pt-2 pb-3" aria-label="Primary">
         <LayoutGroup>
           {NAV.overview.map((item) => (
             <NavLink
@@ -228,7 +237,7 @@ function DesktopSidebar({
                   {adminName}
                 </p>
                 <p className="truncate text-[11px] text-[var(--text-3)] leading-tight mt-0.5">
-                  Administrator
+                  {adminName.toLowerCase() === "administrator" ? "Admin" : "Administrator"}
                 </p>
               </div>
             </div>
@@ -353,7 +362,7 @@ function MobileDrawerPanel({
         </div>
 
         {/* ── Navigation ── */}
-        <nav className="flex-1 overflow-y-auto px-3 pt-2 pb-3" onClick={handleNavClick}>
+        <nav className="flex-1 overflow-y-auto px-3 pt-2 pb-3" onClick={handleNavClick} aria-label="Primary">
           <LayoutGroup>
             {NAV.overview.map((item) => (
               <NavLink
@@ -400,7 +409,7 @@ function MobileDrawerPanel({
                   {adminName}
                 </p>
                 <p className="truncate text-[11px] text-[var(--text-3)] leading-tight mt-0.5">
-                  Administrator
+                  {adminName.toLowerCase() === "administrator" ? "Admin" : "Administrator"}
                 </p>
               </div>
             </div>
@@ -436,6 +445,7 @@ export function AdminShell({
 
   const closeMobile = useCallback(() => setMobileOpen(false), []);
   const toggleMobile = useCallback(() => setMobileOpen(prev => !prev), []);
+  const crumbs = getBreadcrumbSegments(pathname);
 
   // Hide the loading overlay when the admin shell mounts
   useEffect(() => {
@@ -478,11 +488,13 @@ export function AdminShell({
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <header className="hidden md:flex items-center justify-between h-14 px-6 shrink-0 border-b border-[var(--border-subtle)] bg-[var(--surface)]">
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 text-[13px] text-[var(--text-3)]">
-              <span className="text-[var(--text-2)] font-medium">Revenue Partner</span>
-              <span className="text-[var(--text-3)]">/</span>
-              <span>Admin</span>
-            </div>
+            <nav aria-label="Breadcrumb">
+              <ol className="flex items-center gap-2 text-[13px]">
+                <li className="text-[var(--text-2)]">{crumbs.section}</li>
+                <li aria-hidden="true" className="text-[var(--text-3)]">/</li>
+                <li aria-current="page" className="text-[var(--text-1)] font-medium">{crumbs.page}</li>
+              </ol>
+            </nav>
           </div>
           <div className="flex items-center gap-3">
             <div className="hidden lg:block">
@@ -494,7 +506,7 @@ export function AdminShell({
         </header>
 
         <main className="flex-1 overflow-y-auto">
-          <div className="max-w-[1200px] mx-auto px-4 py-6 md:px-10 md:py-8 mobile-content-pad md:!p-0 md:!pt-0">
+          <div className="max-w-[1200px] mx-auto px-4 py-6 md:px-10 md:py-8 mobile-content-pad">
             <PageTransition>{children}</PageTransition>
           </div>
         </main>

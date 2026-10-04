@@ -27,10 +27,11 @@
   --surface: #FFFFFF;
   --surface-elevated: #FFFFFF;
 
-  /* Text Hierarchy */
+  /* Text Hierarchy — all three pass WCAG AA (4.5:1) on white surfaces.
+     text-1 17.7:1, text-2 4.8:1, text-3 5.4:1 (measured 2026-10-04). */
   --text-1: #111827;
   --text-2: #6B7280;
-  --text-3: #9CA3AF;
+  --text-3: #656B76;
 
   /* Borders */
   --border: #E5E7EB;
@@ -41,10 +42,12 @@
   --accent-hover: #1E40AF;
   --accent-light: #EFF6FF;
 
-  /* Status */
-  --status-success: #059669;
+  /* Status — text colors pass WCAG AA on white surfaces.
+     success 5.5:1, warning 5.0:1, danger 4.8:1 (measured 2026-10-04).
+     Green/amber/red are reserved strictly for status meaning. */
+  --status-success: #047857;
   --status-success-bg: #ECFDF5;
-  --status-warning: #D97706;
+  --status-warning: #B45309;
   --status-warning-bg: #FFFBEB;
   --status-danger: #DC2626;
   --status-danger-bg: #FEF2F2;

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight, Clock } from "lucide-react";
-import { Users, Target, FileText, Megaphone, Activity as ActivityIcon } from "lucide-react";
+import { Users, Megaphone, Activity as ActivityIcon, ClipboardCheck, StickyNote, ArrowLeftRight, CalendarCheck, Globe } from "lucide-react";
 import type { PartnerActivityLog } from "@/types/database";
 
 interface ActivityProps {
@@ -10,11 +10,16 @@ interface ActivityProps {
 }
 
 function getActivityIcon(action: string): { icon: React.ReactNode; color: string; bg: string } {
-  if (action.includes("partner")) return { icon: <Users className="h-3.5 w-3.5" />, color: "text-blue-600", bg: "bg-blue-50" };
-  if (action.includes("lead")) return { icon: <Target className="h-3.5 w-3.5" />, color: "text-purple-600", bg: "bg-purple-50" };
-  if (action.includes("report")) return { icon: <FileText className="h-3.5 w-3.5" />, color: "text-emerald-600", bg: "bg-emerald-50" };
-  if (action.includes("announcement")) return { icon: <Megaphone className="h-3.5 w-3.5" />, color: "text-amber-600", bg: "bg-amber-50" };
-  return { icon: <ActivityIcon className="h-3.5 w-3.5" />, color: "text-gray-500", bg: "bg-gray-50" };
+  // Distinct glyph per event kind, single neutral tile — color is reserved for status.
+  const neutral = { color: "text-[var(--text-2)]", bg: "bg-[var(--hover-bg)]" };
+  if (action.includes("lead_notes")) return { icon: <StickyNote className="h-3.5 w-3.5" />, ...neutral };
+  if (action.includes("lead")) return { icon: <ArrowLeftRight className="h-3.5 w-3.5" />, ...neutral };
+  if (action.includes("report")) return { icon: <ClipboardCheck className="h-3.5 w-3.5" />, ...neutral };
+  if (action.includes("partner")) return { icon: <Users className="h-3.5 w-3.5" />, ...neutral };
+  if (action.includes("announcement")) return { icon: <Megaphone className="h-3.5 w-3.5" />, ...neutral };
+  if (action.includes("allocation")) return { icon: <CalendarCheck className="h-3.5 w-3.5" />, ...neutral };
+  if (action.includes("scrape")) return { icon: <Globe className="h-3.5 w-3.5" />, ...neutral };
+  return { icon: <ActivityIcon className="h-3.5 w-3.5" />, ...neutral };
 }
 
 function getRelativeTime(dateStr: string): string {

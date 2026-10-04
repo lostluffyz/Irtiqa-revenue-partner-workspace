@@ -5,6 +5,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { DashboardEntrance } from "@/components/loading/dashboard-entrance";
 import {
   ArrowRight,
+  ArrowLeftRight,
   Upload,
   Plus,
   Megaphone,
@@ -18,19 +19,29 @@ import {
   Users,
   Target,
   CalendarCheck,
+  ClipboardCheck,
+  StickyNote,
+  Globe,
 } from "lucide-react";
 import type { AdminDashboardData } from "@/components/dashboard/helpers";
+import { formatReportDate } from "@/components/dashboard/helpers";
+import { useAdminGreeting } from "@/components/dashboard/admin/use-admin-greeting";
 
 /* ═══════════════════════════════════════════════════════════════
    DesktopAdminDashboard — Original desktop layout, pixel-perfect
    ═══════════════════════════════════════════════════════════════ */
 
 function getActivityIcon(action: string): { icon: React.ReactNode; color: string; bg: string } {
-  if (action.includes("partner")) return { icon: <Users className="h-3.5 w-3.5" />, color: "text-blue-600", bg: "bg-blue-50" };
-  if (action.includes("lead")) return { icon: <Target className="h-3.5 w-3.5" />, color: "text-purple-600", bg: "bg-purple-50" };
-  if (action.includes("report")) return { icon: <FileText className="h-3.5 w-3.5" />, color: "text-emerald-600", bg: "bg-emerald-50" };
-  if (action.includes("announcement")) return { icon: <Megaphone className="h-3.5 w-3.5" />, color: "text-amber-600", bg: "bg-amber-50" };
-  return { icon: <Activity className="h-3.5 w-3.5" />, color: "text-gray-500", bg: "bg-gray-50" };
+  // Distinct glyph per event kind, single neutral tile — color is reserved for status.
+  const neutral = { color: "text-[var(--text-2)]", bg: "bg-[var(--hover-bg)]" };
+  if (action.includes("lead_notes")) return { icon: <StickyNote className="h-3.5 w-3.5" />, ...neutral };
+  if (action.includes("lead")) return { icon: <ArrowLeftRight className="h-3.5 w-3.5" />, ...neutral };
+  if (action.includes("report")) return { icon: <ClipboardCheck className="h-3.5 w-3.5" />, ...neutral };
+  if (action.includes("partner")) return { icon: <Users className="h-3.5 w-3.5" />, ...neutral };
+  if (action.includes("announcement")) return { icon: <Megaphone className="h-3.5 w-3.5" />, ...neutral };
+  if (action.includes("allocation")) return { icon: <CalendarCheck className="h-3.5 w-3.5" />, ...neutral };
+  if (action.includes("scrape")) return { icon: <Globe className="h-3.5 w-3.5" />, ...neutral };
+  return { icon: <Activity className="h-3.5 w-3.5" />, ...neutral };
 }
 
 function getRelativeTime(dateStr: string): string {
@@ -57,72 +68,69 @@ function formatActionLabel(action: string): string {
 
 export function DesktopAdminDashboard({ data }: { data: AdminDashboardData }) {
   const { counts, recentReports, recentActivity, recentAnnouncements, compliance, firstName } = data;
+  const greeting = useAdminGreeting();
+  const subtitle =
+    counts.reportsToday > 0
+      ? `${counts.reportsToday} report${counts.reportsToday !== 1 ? "s" : ""} submitted today · ${counts.activePartners} active partner${counts.activePartners !== 1 ? "s" : ""}.`
+      : counts.activePartners > 0
+        ? `${counts.activePartners} active partner${counts.activePartners !== 1 ? "s" : ""} · here's what's happening today.`
+        : "Here's what's happening with your revenue partners today.";
 
   return (
     <div className="space-y-6">
-      {/* ─── Hero ─── */}
+      {/* ─── Hero + quick actions ─── */}
       <DashboardEntrance delay={0}>
-        <h1 className="text-[24px] font-bold tracking-[-0.025em] text-[var(--text-1)]">
-          Good morning, {firstName}
-        </h1>
-        <p className="mt-1.5 text-[14px] text-[var(--text-2)] leading-relaxed">
-          {counts.unassignedLeads > 0
-            ? `${counts.unassignedLeads} lead${counts.unassignedLeads !== 1 ? "s" : ""} waiting for assignment — ${counts.reportsToday} report${counts.reportsToday !== 1 ? "s" : ""} submitted today.`
-            : counts.reportsToday > 0
-              ? `${counts.reportsToday} report${counts.reportsToday !== 1 ? "s" : ""} submitted today. ${counts.appointmentsToday} appointment${counts.appointmentsToday !== 1 ? "s" : ""} booked.`
-              : "Here's what's happening with your revenue partners today."}
-        </p>
-      </DashboardEntrance>
-
-      {/* ─── Quick Actions ─── */}
-      <DashboardEntrance delay={50} className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <Link href="/admin/leads/upload" className="surface quick-action p-4 flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-[8px] bg-[var(--accent-light)]">
-            <Upload className="h-[18px] w-[18px] text-[var(--accent)]" />
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h1 className="text-[24px] font-bold tracking-[-0.025em] text-[var(--text-1)]">
+              <span key={greeting ?? "pending"} className="animate-fade-in inline-block">
+                {greeting ?? "\u00A0"}
+              </span>
+              , {firstName}
+            </h1>
+            <p className="mt-1.5 text-[14px] text-[var(--text-2)] leading-relaxed">
+              {subtitle}
+            </p>
           </div>
-          <div className="min-w-0">
-            <p className="text-[13px] font-semibold text-[var(--text-1)] truncate">Upload CSV</p>
-            <p className="text-[11px] text-[var(--text-3)] truncate">Import leads</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/admin/leads/upload"
+              className="inline-flex items-center justify-center gap-2 h-[32px] px-3 rounded-[8px] text-[13px] font-medium bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2"
+            >
+              <Upload className="h-3.5 w-3.5" />
+              Upload CSV
+            </Link>
+            <Link
+              href="/admin/partners/create"
+              className="inline-flex items-center justify-center gap-2 h-[32px] px-3 rounded-[8px] text-[13px] font-medium border border-[var(--border)] bg-[var(--surface)] text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)] transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add Partner
+            </Link>
+            <Link
+              href="/admin/announcements/new"
+              className="inline-flex items-center justify-center gap-2 h-[32px] px-3 rounded-[8px] text-[13px] font-medium text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)] transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2"
+            >
+              <Megaphone className="h-3.5 w-3.5" />
+              Announcement
+            </Link>
+            <Link
+              href="/admin/reports"
+              className="inline-flex items-center justify-center gap-2 h-[32px] px-3 rounded-[8px] text-[13px] font-medium text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)] transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2"
+            >
+              <Eye className="h-3.5 w-3.5" />
+              View Reports
+            </Link>
           </div>
-        </Link>
-
-        <Link href="/admin/partners/create" className="surface quick-action p-4 flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-[8px] bg-[var(--status-success-bg)]">
-            <Plus className="h-[18px] w-[18px] text-[var(--status-success)]" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[13px] font-semibold text-[var(--text-1)] truncate">Add Partner</p>
-            <p className="text-[11px] text-[var(--text-3)] truncate">New revenue partner</p>
-          </div>
-        </Link>
-
-        <Link href="/admin/announcements/new" className="surface quick-action p-4 flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-[8px] bg-[var(--status-warning-bg)]">
-            <Megaphone className="h-[18px] w-[18px] text-[var(--status-warning)]" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[13px] font-semibold text-[var(--text-1)] truncate">Announcement</p>
-            <p className="text-[11px] text-[var(--text-3)] truncate">Publish update</p>
-          </div>
-        </Link>
-
-        <Link href="/admin/reports" className="surface quick-action p-4 flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-[8px] bg-purple-50">
-            <Eye className="h-[18px] w-[18px] text-purple-600" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[13px] font-semibold text-[var(--text-1)] truncate">View Reports</p>
-            <p className="text-[11px] text-[var(--text-3)] truncate">Daily activity</p>
-          </div>
-        </Link>
+        </div>
       </DashboardEntrance>
 
       {/* ─── KPI Metrics ─── */}
       <DashboardEntrance delay={100} className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <KpiCard
           icon={<Target className="h-[18px] w-[18px]" />}
-          iconColor="text-[var(--accent)]"
-          iconBg="bg-[var(--accent-light)]"
+          iconColor="text-[var(--text-2)]"
+          iconBg="bg-[var(--hover-bg)]"
           value={counts.totalLeads.toLocaleString()}
           label="Total Leads"
           context={`${counts.unassignedLeads} unassigned`}
@@ -130,16 +138,16 @@ export function DesktopAdminDashboard({ data }: { data: AdminDashboardData }) {
         />
         <KpiCard
           icon={<Users className="h-[18px] w-[18px]" />}
-          iconColor="text-emerald-600"
-          iconBg="bg-emerald-50"
+          iconColor="text-[var(--text-2)]"
+          iconBg="bg-[var(--hover-bg)]"
           value={String(counts.activePartners)}
           label="Active Partners"
           context={`${counts.totalPartners} total`}
         />
         <KpiCard
           icon={<ShieldCheck className="h-[18px] w-[18px]" />}
-          iconColor="text-violet-600"
-          iconBg="bg-violet-50"
+          iconColor="text-[var(--text-2)]"
+          iconBg="bg-[var(--hover-bg)]"
           value={`${compliance.compliance_percentage}%`}
           label="Compliance"
           context={`${compliance.submitted_count}/${compliance.total_active_partners} reported`}
@@ -153,8 +161,8 @@ export function DesktopAdminDashboard({ data }: { data: AdminDashboardData }) {
         />
         <KpiCard
           icon={<CalendarCheck className="h-[18px] w-[18px]" />}
-          iconColor="text-amber-600"
-          iconBg="bg-amber-50"
+          iconColor="text-[var(--text-2)]"
+          iconBg="bg-[var(--hover-bg)]"
           value={String(counts.appointmentsToday)}
           label="Appointments"
           context="booked today"
@@ -206,7 +214,21 @@ export function DesktopAdminDashboard({ data }: { data: AdminDashboardData }) {
           </div>
         </div>
 
-        <div className="px-5 py-4 grid grid-cols-3 gap-4">
+        <div
+          className="mx-5 mt-4 h-1.5 overflow-hidden rounded-full bg-[var(--border-subtle)]"
+          role="progressbar"
+          aria-valuenow={compliance.compliance_percentage}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Daily compliance progress"
+        >
+          <div
+            className="h-full rounded-full bg-[var(--accent)] transition-[width] duration-300"
+            style={{ width: `${compliance.compliance_percentage}%` }}
+          />
+        </div>
+
+        <div className="px-5 py-3 grid grid-cols-3 gap-2">
           <div className="flex items-center gap-2.5">
             <span className="h-3 w-3 rounded-full bg-[var(--status-success)] shrink-0" />
             <div>
@@ -269,14 +291,13 @@ export function DesktopAdminDashboard({ data }: { data: AdminDashboardData }) {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full table-fixed">
               <thead>
                 <tr className="border-b border-[var(--border-subtle)] bg-[#FAFAF8]">
                   <th className="px-5 py-2.5 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)]">Partner</th>
-                  <th className="px-5 py-2.5 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)]">Date</th>
-                  <th className="px-5 py-2.5 text-right text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)]">Contacted</th>
-                  <th className="px-5 py-2.5 text-right text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)]">Appts</th>
-                  <th className="px-5 py-2.5 text-right text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)]">Deals</th>
+                  <th className="px-3 py-2.5 text-right text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] w-[84px]">Contacted</th>
+                  <th className="px-3 py-2.5 text-right text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] w-[84px]">Appts</th>
+                  <th className="px-3 py-2.5 text-right text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] w-[84px]">Deals</th>
                 </tr>
               </thead>
               <tbody>
@@ -285,16 +306,23 @@ export function DesktopAdminDashboard({ data }: { data: AdminDashboardData }) {
                   const partnerName = typed.partners?.profiles?.full_name || "Unknown";
                   return (
                     <tr key={typed.id} className="border-b border-[var(--border-subtle)] last:border-0 transition-colors duration-150 hover:bg-[var(--hover-bg)]">
-                      <td className="px-5 py-3">
+                      <td className="px-5 py-2.5">
                         <div className="flex items-center gap-2.5">
                           <Avatar name={partnerName} size="sm" />
-                          <span className="text-[13px] font-medium text-[var(--text-1)] truncate max-w-[180px]">{partnerName}</span>
+                          <div className="min-w-0">
+                            <p className="text-[13px] font-medium text-[var(--text-1)] truncate">{partnerName}</p>
+                            <p
+                              className="text-[11px] text-[var(--text-3)] tabular-nums"
+                              title={typed.report_date}
+                            >
+                              {formatReportDate(typed.report_date)}
+                            </p>
+                          </div>
                         </div>
                       </td>
-                      <td className="px-5 py-3 text-[12px] text-[var(--text-2)] tabular-nums whitespace-nowrap">{typed.report_date}</td>
-                      <td className="px-5 py-3 text-[13px] text-[var(--text-1)] tabular-nums text-right w-20 font-medium">{typed.leads_contacted}</td>
-                      <td className="px-5 py-3 text-[13px] text-[var(--text-1)] tabular-nums text-right w-20 font-medium">{typed.appointments_booked}</td>
-                      <td className="px-5 py-3 text-[13px] tabular-nums text-right w-20 font-medium">
+                      <td className={`px-3 py-2.5 text-[13px] tabular-nums text-right font-medium ${typed.leads_contacted > 0 ? "text-[var(--text-1)]" : "text-[var(--text-3)]"}`}>{typed.leads_contacted}</td>
+                      <td className={`px-3 py-2.5 text-[13px] tabular-nums text-right font-medium ${typed.appointments_booked > 0 ? "text-[var(--text-1)]" : "text-[var(--text-3)]"}`}>{typed.appointments_booked}</td>
+                      <td className="px-3 py-2.5 text-[13px] tabular-nums text-right font-medium">
                         {typed.deals_closed > 0 ? (
                           <span className="text-[var(--status-success)]">{typed.deals_closed}</span>
                         ) : (
@@ -354,7 +382,7 @@ export function DesktopAdminDashboard({ data }: { data: AdminDashboardData }) {
         </div>
 
         {/* Announcements */}
-        <div className="surface">
+        <div className="surface self-start">
           <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-subtle)]">
             <div>
               <h2 className="text-[14px] font-semibold text-[var(--text-1)]">Announcements</h2>
@@ -370,9 +398,15 @@ export function DesktopAdminDashboard({ data }: { data: AdminDashboardData }) {
           </div>
 
           {recentAnnouncements.length === 0 ? (
-            <div className="px-5 py-12 text-center">
+            <div className="px-5 py-8 text-center">
               <Megaphone className="h-8 w-8 text-[var(--text-3)] opacity-30 mx-auto mb-3" />
               <p className="text-[13px] text-[var(--text-3)]">No announcements yet.</p>
+              <Link
+                href="/admin/announcements/new"
+                className="mt-3 inline-flex items-center justify-center gap-2 h-[32px] px-3 rounded-[8px] text-[13px] font-medium border border-[var(--border)] bg-[var(--surface)] text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)] transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2"
+              >
+                Post announcement
+              </Link>
             </div>
           ) : (
             <div className="divide-y divide-[var(--border-subtle)]">
