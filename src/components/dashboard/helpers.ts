@@ -307,3 +307,28 @@ export function formatReportDate(reportDate: string, todayStr?: string): string 
   if (parts.y === today.y) return `${SHORT_MONTHS[parts.m - 1]} ${parts.d}`;
   return `${SHORT_MONTHS[parts.m - 1]} ${parts.d}, ${parts.y}`;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Website Hostnames — Clean display for lead website cells
+   ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Extract a clean hostname for display (no protocol, www, path, or query).
+ * The original full URL is always kept as the link href / tooltip.
+ *
+ * @param url - raw website string (may lack protocol or be invalid)
+ * @returns hostname, or the trimmed input when it cannot be parsed
+ */
+export function formatWebsiteHostname(url: string): string {
+  const trimmed = url.trim();
+  if (!trimmed) return trimmed;
+  const withProtocol = /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`;
+  try {
+    const hostname = new URL(withProtocol).hostname.toLowerCase();
+    return hostname.replace(/^www\./, "") || trimmed;
+  } catch {
+    return trimmed;
+  }
+}

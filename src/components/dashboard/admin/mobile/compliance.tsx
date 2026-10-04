@@ -12,24 +12,24 @@ export function MobileCompliance({ compliance }: ComplianceProps) {
     <div className="mobile-section-card">
       <div className="mobile-section-header">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[var(--accent-light)]">
-            <ShieldCheck className="h-5 w-5 text-[var(--accent)]" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[var(--hover-bg)]">
+            <ShieldCheck className="h-5 w-5 text-[var(--text-2)]" />
           </div>
           <div>
             <h2 className="text-[15px] font-semibold text-[var(--text-1)]">Daily Compliance</h2>
             <p className="text-[13px] text-[var(--text-3)] mt-0.5">
-              Deadline: {compliance.deadline_display} UTC
+              Due {compliance.deadline_display} UTC
               {compliance.grace_period_minutes > 0 && (
-                <span> ({compliance.grace_period_minutes} min grace)</span>
+                <span> (+{compliance.grace_period_minutes}m)</span>
               )}
             </p>
           </div>
         </div>
-        <div className="text-right mt-3">
+        <div className="mt-3 flex items-baseline gap-2">
           <p className="text-[28px] font-bold leading-none tracking-[-0.02em] text-[var(--text-1)] tabular-nums">
             {compliance.compliance_percentage}%
           </p>
-          <p className="text-[12px] text-[var(--text-3)] mt-1.5">
+          <p className="text-[12px] text-[var(--text-3)] tabular-nums whitespace-nowrap">
             {compliance.submitted_count}/{compliance.total_active_partners} partners
           </p>
         </div>

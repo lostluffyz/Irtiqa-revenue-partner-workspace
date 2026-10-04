@@ -10,8 +10,8 @@ interface BadgeProps {
 
 const variants: Record<BadgeVariant, string> = {
   default: "bg-[#F3F4F6] text-[#6B7280]",
-  success: "bg-[#ECFDF5] text-[#059669]",
-  warning: "bg-[#FFFBEB] text-[#D97706]",
+  success: "bg-[#ECFDF5] text-[#047857]",
+  warning: "bg-[#FFFBEB] text-[#B45309]",
   danger: "bg-[#FEF2F2] text-[#DC2626]",
   info: "bg-[#EFF6FF] text-[#1A56DB]",
 };

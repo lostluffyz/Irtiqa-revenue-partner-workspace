@@ -166,7 +166,11 @@ export default async function LeadsPage({
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
         <StatCard value={aggregateStats.total} label="Total" />
         <StatCard value={aggregateStats.total - aggregateStats.unassigned} label="Assigned" />
-        <StatCard value={aggregateStats.unassigned} label="Unassigned" />
+        <StatCard
+          value={aggregateStats.unassigned}
+          label="Unassigned"
+          valueClassName={aggregateStats.unassigned > 0 ? "text-[var(--status-warning)]" : ""}
+        />
         <StatCard value={aggregateStats.contacted} label="Contacted" />
         <StatCard value={aggregateStats.appointmentsBooked} label="Appt. Booked" />
       </div>

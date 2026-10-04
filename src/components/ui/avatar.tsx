@@ -12,15 +12,13 @@ const sizeStyles: Record<AvatarSize, string> = {
   lg: "h-10 w-10 text-[13px]",
 };
 
+// Restrained non-status palette — never green/amber/red, which are
+// reserved strictly for status meaning.
 const AVATAR_COLORS = [
-  "bg-blue-50 text-blue-600",
-  "bg-emerald-50 text-emerald-600",
-  "bg-amber-50 text-amber-600",
-  "bg-rose-50 text-rose-600",
-  "bg-violet-50 text-violet-600",
-  "bg-cyan-50 text-cyan-600",
-  "bg-orange-50 text-orange-600",
-  "bg-teal-50 text-teal-600",
+  "bg-slate-100 text-slate-600",
+  "bg-indigo-50 text-indigo-600",
+  "bg-cyan-50 text-cyan-700",
+  "bg-stone-100 text-stone-600",
 ];
 
 function getColorFromName(name: string): string {

@@ -19,6 +19,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { updateLeadStatusAction, assignLeadsAction } from "./actions";
+import { formatWebsiteHostname } from "@/components/dashboard/helpers";
 import type { ActivePartner } from "./lead-filters";
 
 export interface Lead {
@@ -83,35 +84,6 @@ function formatDate(dateStr: string): string {
   if (diffDay === 1) return "Yesterday";
   if (diffDay < 7) return `${diffDay}d ago`;
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
-function getCompanyInitials(name: string): string {
-  return name
-    .split(/[\s&]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
-}
-
-const COMPANY_COLORS = [
-  "bg-blue-50 text-blue-600 border-blue-100",
-  "bg-emerald-50 text-emerald-600 border-emerald-100",
-  "bg-violet-50 text-violet-600 border-violet-100",
-  "bg-amber-50 text-amber-600 border-amber-100",
-  "bg-rose-50 text-rose-600 border-rose-100",
-  "bg-cyan-50 text-cyan-600 border-cyan-100",
-  "bg-orange-50 text-orange-600 border-orange-100",
-  "bg-teal-50 text-teal-600 border-teal-100",
-];
-
-function getCompanyColor(name: string): string {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return COMPANY_COLORS[Math.abs(hash) % COMPANY_COLORS.length];
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -454,7 +426,7 @@ export function LeadTable({
       {/* Table */}
       <div className="surface overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full table-fixed">
             {/* Header */}
             <thead>
               <tr className="border-b border-[var(--border)] bg-[#FAFAF8]">
@@ -470,19 +442,19 @@ export function LeadTable({
                 <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] sticky top-0 bg-[#FAFAF8] z-10">
                   Company
                 </th>
-                <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] sticky top-0 bg-[#FAFAF8] z-10">
+                <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] sticky top-0 bg-[#FAFAF8] z-10 w-[210px]">
                   Contact
                 </th>
-                <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] sticky top-0 bg-[#FAFAF8] z-10 hidden lg:table-cell">
+                <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] sticky top-0 bg-[#FAFAF8] z-10 hidden min-[1500px]:table-cell w-[150px]">
                   Industry
                 </th>
-                <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] sticky top-0 bg-[#FAFAF8] z-10">
+                <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] sticky top-0 bg-[#FAFAF8] z-10 w-[130px]">
                   Status
                 </th>
-                <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] sticky top-0 bg-[#FAFAF8] z-10 hidden md:table-cell">
+                <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] sticky top-0 bg-[#FAFAF8] z-10 hidden md:table-cell w-[150px]">
                   Assigned To
                 </th>
-                <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] sticky top-0 bg-[#FAFAF8] z-10 hidden xl:table-cell">
+                <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] sticky top-0 bg-[#FAFAF8] z-10 hidden min-[1500px]:table-cell w-[100px]">
                   Created
                 </th>
                 <th className="w-10 px-2 sticky top-0 bg-[#FAFAF8] z-10" />
@@ -495,7 +467,6 @@ export function LeadTable({
                 const isSelected = selectedIds.has(lead.id);
                 const effectiveStatus = getStatus(lead);
                 const effectivePartner = getPartner(lead);
-                const companyColor = getCompanyColor(lead.company_name);
                 const isContextMenuOpen = contextMenuLeadId === lead.id;
 
                 return (
@@ -523,20 +494,29 @@ export function LeadTable({
 
                     {/* Company */}
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border text-[11px] font-bold ${companyColor}`}>
-                          {getCompanyInitials(lead.company_name)}
+                      <div className="flex items-center gap-3 min-w-0 max-w-[280px]">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--hover-bg)]">
+                          <Building2 className="h-4 w-4 text-[var(--text-2)]" />
                         </div>
                         <div className="min-w-0">
-                          <span className="block text-[13px] font-semibold text-[var(--text-1)] truncate">
+                          <span
+                            className="block text-[13px] font-semibold text-[var(--text-1)] truncate"
+                            title={lead.company_name}
+                          >
                             {lead.company_name}
                           </span>
-                          <div className="flex items-center gap-1.5 mt-0.5">
+                          <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
                             {lead.website && (
-                              <span className="text-[11px] text-[var(--text-3)] truncate flex items-center gap-1">
+                              <a
+                                href={lead.website}
+                                target="_blank"
+                                rel="noreferrer"
+                                title={lead.website}
+                                className="text-[11px] text-[var(--text-3)] hover:text-[var(--accent)] truncate flex items-center gap-1 min-w-0 transition-colors duration-150"
+                              >
                                 <Globe className="h-3 w-3 shrink-0" />
-                                {lead.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}
-                              </span>
+                                <span className="truncate">{formatWebsiteHostname(lead.website)}</span>
+                              </a>
                             )}
                             {lead.industry && (
                               <span className="text-[11px] text-[var(--text-3)] truncate hidden sm:inline">
@@ -553,9 +533,12 @@ export function LeadTable({
                     <td className="px-4 py-3">
                       <div className="min-w-0">
                         {lead.email ? (
-                          <div className="flex items-center gap-1.5 text-[12px] text-[var(--text-2)] truncate max-w-[200px]">
+                          <div
+                            className="flex items-center gap-1.5 text-[12px] text-[var(--text-2)] truncate max-w-[200px]"
+                            title={lead.email}
+                          >
                             <Mail className="h-3 w-3 shrink-0 text-[var(--text-3)]" />
-                            {lead.email}
+                            <span className="truncate">{lead.email}</span>
                           </div>
                         ) : (
                           <span className="text-[12px] text-[var(--text-3)]">—</span>
@@ -570,7 +553,7 @@ export function LeadTable({
                     </td>
 
                     {/* Industry */}
-                    <td className="px-4 py-3 hidden lg:table-cell">
+                    <td className="px-4 py-3 hidden min-[1500px]:table-cell">
                       {lead.industry ? (
                         <div className="flex items-center gap-1.5 text-[12px] text-[var(--text-2)] truncate max-w-[140px]">
                           <Building2 className="h-3 w-3 shrink-0 text-[var(--text-3)]" />
@@ -606,7 +589,7 @@ export function LeadTable({
                     </td>
 
                     {/* Created */}
-                    <td className="px-4 py-3 hidden xl:table-cell">
+                    <td className="px-4 py-3 hidden min-[1500px]:table-cell">
                       <span className="text-[12px] text-[var(--text-3)] tabular-nums">
                         {formatDate(lead.created_at)}
                       </span>
@@ -647,7 +630,7 @@ export function LeadTable({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4">
+        <div className="sticky bottom-0 z-10 mt-4 flex items-center justify-between border-t border-[var(--border-subtle)] bg-[var(--canvas)]/95 py-3 backdrop-blur">
           <p className="text-[12px] text-[var(--text-3)] tabular-nums">
             Page {currentPage} of {totalPages}
           </p>
@@ -726,7 +709,7 @@ export function LeadsTableSkeleton() {
           <div className="h-4 w-4 skeleton rounded" />
           <div className="h-3 w-32 skeleton rounded" />
           <div className="h-3 w-24 skeleton rounded" />
-          <div className="h-3 w-20 skeleton rounded hidden lg:block" />
+          <div className="h-3 w-20 skeleton rounded hidden min-[1500px]:block" />
           <div className="h-3 w-20 skeleton rounded" />
           <div className="h-3 w-24 skeleton rounded hidden md:block" />
         </div>

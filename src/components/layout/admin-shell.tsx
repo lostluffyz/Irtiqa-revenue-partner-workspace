@@ -446,6 +446,9 @@ export function AdminShell({
   const closeMobile = useCallback(() => setMobileOpen(false), []);
   const toggleMobile = useCallback(() => setMobileOpen(prev => !prev), []);
   const crumbs = getBreadcrumbSegments(pathname);
+  // Leads carries the densest table in the app — allow it a wider container.
+  // Every other route keeps the default readable measure.
+  const isWideRoute = pathname.startsWith("/admin/leads");
 
   // Hide the loading overlay when the admin shell mounts
   useEffect(() => {
@@ -506,7 +509,7 @@ export function AdminShell({
         </header>
 
         <main className="flex-1 overflow-y-auto">
-          <div className="max-w-[1200px] mx-auto px-4 py-6 md:px-10 md:py-8 mobile-content-pad">
+          <div className={`${isWideRoute ? "max-w-[1400px]" : "max-w-[1200px]"} mx-auto px-4 py-6 md:px-10 md:py-8 mobile-content-pad`}>
             <PageTransition>{children}</PageTransition>
           </div>
         </main>

@@ -12,23 +12,23 @@ export function MobileStats({ counts, compliance }: StatsProps) {
   return (
     <div className="mobile-stat-grid">
       <MobileStatCard
-        icon={<Target className="h-5 w-5 text-[var(--accent)]" />}
-        iconBg="bg-[var(--accent-light)]"
+        icon={<Target className="h-5 w-5 text-[var(--text-2)]" />}
+        iconBg="bg-[var(--hover-bg)]"
         value={counts.totalLeads.toLocaleString()}
         label="Total Leads"
         context={`${counts.unassignedLeads} unassigned`}
         contextColor={counts.unassignedLeads > 0 ? "text-[var(--status-warning)]" : undefined}
       />
       <MobileStatCard
-        icon={<Users className="h-5 w-5 text-emerald-600" />}
-        iconBg="bg-emerald-50"
+        icon={<Users className="h-5 w-5 text-[var(--text-2)]" />}
+        iconBg="bg-[var(--hover-bg)]"
         value={String(counts.activePartners)}
         label="Active Partners"
         context={`${counts.totalPartners} total`}
       />
       <MobileStatCard
-        icon={<ShieldCheck className="h-5 w-5 text-violet-600" />}
-        iconBg="bg-violet-50"
+        icon={<ShieldCheck className="h-5 w-5 text-[var(--text-2)]" />}
+        iconBg="bg-[var(--hover-bg)]"
         value={`${compliance.compliance_percentage}%`}
         label="Compliance"
         context={`${compliance.submitted_count}/${compliance.total_active_partners} reported`}
@@ -41,8 +41,8 @@ export function MobileStats({ counts, compliance }: StatsProps) {
         }
       />
       <MobileStatCard
-        icon={<CalendarCheck className="h-5 w-5 text-amber-600" />}
-        iconBg="bg-amber-50"
+        icon={<CalendarCheck className="h-5 w-5 text-[var(--text-2)]" />}
+        iconBg="bg-[var(--hover-bg)]"
         value={String(counts.appointmentsToday)}
         label="Appointments"
         context="booked today"

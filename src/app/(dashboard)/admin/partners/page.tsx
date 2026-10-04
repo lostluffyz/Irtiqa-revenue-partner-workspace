@@ -166,10 +166,11 @@ export default async function PartnersPage({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard value={aggregateStats.total} label="Total" />
         <StatCard value={aggregateStats.active} label="Active" />
-        <StatCard value={aggregateStats.withLeads} label="With Leads" />
+        <StatCard value={aggregateStats.withLeads} label="Leads Assigned" sub="Across all partners" />
         <StatCard
           value={aggregateStats.inactive + aggregateStats.suspended}
           label="Needs Attention"
+          sub="Inactive + suspended"
         />
       </div>
 

@@ -11,6 +11,7 @@ import {
   Users,
   Building2,
   MoreHorizontal,
+  ChevronRight,
   Key,
   Shield,
   ShieldOff,
@@ -60,14 +61,14 @@ interface PartnerListProps {
 /* ═══════════════════════════════════════════════════════════════
    Status Config
    ═══════════════════════════════════════════════════════════════ */
-const STATUS_CONFIG: Record<string, { variant: "success" | "warning" | "danger" | "default"; label: string; dot: string }> = {
-  active: { variant: "success", label: "Active", dot: "bg-emerald-500" },
-  inactive: { variant: "warning", label: "Inactive", dot: "bg-amber-500" },
-  suspended: { variant: "danger", label: "Suspended", dot: "bg-red-500" },
+const STATUS_CONFIG: Record<string, { variant: "success" | "warning" | "danger" | "default"; label: string }> = {
+  active: { variant: "success", label: "Active" },
+  inactive: { variant: "warning", label: "Inactive" },
+  suspended: { variant: "danger", label: "Suspended" },
 };
 
 function getStatusConfig(status: string) {
-  return STATUS_CONFIG[status] || { variant: "default" as const, label: status, dot: "bg-gray-400" };
+  return STATUS_CONFIG[status] || { variant: "default" as const, label: status };
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -115,7 +116,7 @@ function PartnerCard({
 
         {/* Primary: Name + metadata */}
         <DataCardColumn primary>
-          {/* Row 1: Name (dominant) + Status dot */}
+          {/* Row 1: Name (dominant) + Status pill */}
           <div className="flex items-center gap-2">
             <Link
               href={`/admin/partners/${partner.id}`}
@@ -123,7 +124,7 @@ function PartnerCard({
             >
               {displayName}
             </Link>
-            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${statusConfig.dot}`} title={statusConfig.label} />
+            <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
           </div>
 
           {/* Row 2: Metadata — recedes visually */}
@@ -134,7 +135,7 @@ function PartnerCard({
             >
               {partner.company_id}
             </code>
-            {partner.profiles?.email && (
+            {partner.profiles?.email && !partner.profiles.email.endsWith("@rp.irtiqa.internal") && (
               <>
                 <span className="dl-type-micro text-[var(--text-3)]">·</span>
                 <span className="dl-type-caption text-[var(--text-3)] truncate max-w-[180px]">
@@ -154,7 +155,10 @@ function PartnerCard({
             {partner.reportStatus && (
               <>
                 <span className="dl-type-micro text-[var(--text-3)] hidden sm:inline">·</span>
-                <span className="hidden sm:inline-flex items-center">
+                <span className="hidden sm:inline-flex items-center gap-1.5">
+                  <span className="dl-type-micro normal-case tracking-normal text-[var(--text-3)]">
+                    Report
+                  </span>
                   <ReportStatusChip status={partner.reportStatus} />
                 </span>
               </>
@@ -185,11 +189,12 @@ function PartnerCard({
               e.stopPropagation();
               onOpenMenu(partner.id);
             }}
-            className="p-1.5 rounded-[var(--radius-sm)] text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)] transition-colors duration-100"
+            className="p-1.5 rounded-[var(--radius-sm)] text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)] transition-colors duration-100 focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-[-2px]"
             aria-label="Actions"
           >
             <MoreHorizontal className="h-4 w-4" />
           </button>
+          <ChevronRight className="h-4 w-4 shrink-0 text-[var(--text-3)]" aria-hidden="true" />
         </div>
       </DataCard>
 

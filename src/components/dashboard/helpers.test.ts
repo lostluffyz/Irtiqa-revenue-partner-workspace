@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatReportDate, getBreadcrumbSegments } from "./helpers";
+import { formatReportDate, getBreadcrumbSegments, formatWebsiteHostname } from "./helpers";
 
 describe("formatReportDate", () => {
   it("returns Today for the reference date", () => {
@@ -45,6 +45,33 @@ describe("formatReportDate", () => {
     // the formatter must not do that regardless of runtime TZ.
     expect(formatReportDate("2026-10-02", "2026-10-02")).toBe("Today");
     expect(formatReportDate("2026-01-01", "2026-06-15")).toBe("Jan 1");
+  });
+});
+
+describe("formatWebsiteHostname", () => {
+  it("strips protocol, www, path, query, and utm params", () => {
+    expect(
+      formatWebsiteHostname("https://www.acme.com/blog?utm_source=x&utm_medium=y"),
+    ).toBe("acme.com");
+    expect(formatWebsiteHostname("http://example.com/")).toBe("example.com");
+    expect(formatWebsiteHostname("https://shop.example.co.uk/p/1?x=2")).toBe(
+      "shop.example.co.uk",
+    );
+  });
+
+  it("handles URLs without protocol", () => {
+    expect(formatWebsiteHostname("acme.com/pricing")).toBe("acme.com");
+    expect(formatWebsiteHostname("www.acme.com")).toBe("acme.com");
+  });
+
+  it("lowercases hostnames", () => {
+    expect(formatWebsiteHostname("https://WWW.Acme.COM")).toBe("acme.com");
+  });
+
+  it("returns invalid or empty input unchanged", () => {
+    expect(formatWebsiteHostname("not a url at all")).toBe("not a url at all");
+    expect(formatWebsiteHostname("")).toBe("");
+    expect(formatWebsiteHostname("   ")).toBe("");
   });
 });
 
