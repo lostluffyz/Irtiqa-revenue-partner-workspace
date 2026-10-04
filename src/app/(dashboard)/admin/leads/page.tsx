@@ -151,7 +151,7 @@ export default async function LeadsPage({
           <div className="flex items-center gap-2">
             <LeadPageActions activePartners={activePartners} />
             <Link href="/admin/leads/upload">
-              <Button size="sm" variant="secondary" className="dl-press">
+              <Button size="sm" variant="secondary" className="dl-press min-h-[44px] md:min-h-0">
                 <Upload className="h-3.5 w-3.5" />
                 Upload CSV
               </Button>

@@ -1996,6 +1996,24 @@ body {
     display: block;
   }
 
+  /* Chip row edge fade — hints horizontal scroll without clipping the page */
+  .chip-row-fade {
+    mask-image: linear-gradient(to right, black 0, black calc(100% - 28px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black 0, black calc(100% - 28px), transparent 100%);
+    scrollbar-width: none;
+  }
+  .chip-row-fade::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Industry subtitle hides once the Industry column itself is visible (≥1500px).
+     Plain unlayered rule so it deterministically beats the sm:inline utility. */
+  @media (min-width: 1500px) {
+    .industry-subtitle {
+      display: none;
+    }
+  }
+
   .mobile-report-stat-value {
     font-size: 14px;
     font-weight: 600;

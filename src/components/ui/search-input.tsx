@@ -82,7 +82,7 @@ export const SearchInput = forwardRef<SearchInputHandle, SearchInputProps>(
           </button>
         ) : (
           !focused && (
-            <div className="absolute right-3 flex items-center gap-1 pointer-events-none">
+            <div className="absolute right-3 hidden items-center gap-1 pointer-events-none [@media(hover:hover)]:flex">
               <kbd className="inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded border border-[var(--border)] bg-[var(--canvas)] dl-type-micro">
                 <Command className="h-2.5 w-2.5" />
               </kbd>

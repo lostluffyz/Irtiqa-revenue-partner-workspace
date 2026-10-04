@@ -8,7 +8,6 @@ import {
   Toolbar,
   ToolbarSearch,
   ToolbarFilters,
-  TabGroup,
   Popover,
   PopoverTrigger,
 } from "@/components/ui";
@@ -112,16 +111,16 @@ export function LeadFilters({
 
   return (
     <div className="space-y-3">
-      {/* Search + Filter row */}
-      <Toolbar>
-        <ToolbarSearch>
+      {/* Search + Filter row — wraps on small screens so the page never scrolls sideways */}
+      <Toolbar className="flex-wrap">
+        <ToolbarSearch className="max-sm:basis-full">
           <SearchInput
             ref={searchRef}
             value={search}
             onChange={handleSearchChange}
             onClear={() => { setSearch(""); applyFilters({ search: "" }); }}
             onSubmit={() => applyFilters()}
-            placeholder="Search companies, emails, phones..."
+            placeholder="Search leads"
           />
         </ToolbarSearch>
 
@@ -162,23 +161,44 @@ export function LeadFilters({
         </ToolbarFilters>
       </Toolbar>
 
-      {/* Status tabs + results count row */}
-      <div className="flex items-center justify-between">
-        <TabGroup
-          options={STATUS_OPTIONS.map((opt) => ({
-            ...opt,
-            count: opt.value === "all" ? total : undefined,
-          }))}
-          value={status}
-          onChange={(v) => {
-            setStatus(v);
-            applyFilters({ status: v });
-          }}
-        />
+      {/* Status chips + results count row */}
+      <div className="flex items-center gap-3">
+        <div
+          className="chip-row-fade flex min-w-0 flex-1 items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1"
+          role="group"
+          aria-label="Filter by status"
+        >
+          {STATUS_OPTIONS.map((opt) => {
+            const isActive = status === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => {
+                  setStatus(opt.value);
+                  applyFilters({ status: opt.value });
+                }}
+                aria-pressed={isActive}
+                className={`inline-flex h-[32px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 text-[12px] font-medium tabular-nums transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2 ${
+                  isActive
+                    ? "border-transparent bg-[var(--text-1)] text-white"
+                    : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)]"
+                }`}
+              >
+                {opt.label}
+                {opt.value === "all" && (
+                  <span className={`tabular-nums ${isActive ? "text-white/70" : "text-[var(--text-3)]"}`}>
+                    ({total})
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
 
         {/* Results count */}
         {hasActiveFilters && (
-          <p className="dl-type-caption text-[var(--text-3)] tabular-nums shrink-0 ml-4">
+          <p className="dl-type-caption text-[var(--text-3)] tabular-nums shrink-0">
             {filteredCount} of {total}
           </p>
         )}

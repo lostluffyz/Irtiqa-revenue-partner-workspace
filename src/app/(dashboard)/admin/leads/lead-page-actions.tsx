@@ -29,7 +29,7 @@ export function LeadPageActions({
       <Button
         size="sm"
         onClick={() => setDialogOpen(true)}
-        className="dl-press"
+        className="dl-press min-h-[44px] md:min-h-0"
       >
         <Sparkles className="h-3.5 w-3.5" />
         Assign Leads

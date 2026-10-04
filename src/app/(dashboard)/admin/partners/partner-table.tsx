@@ -116,7 +116,7 @@ function PartnerCard({
 
         {/* Primary: Name + metadata */}
         <DataCardColumn primary>
-          {/* Row 1: Name (dominant) + Status pill */}
+          {/* Row 1: Name (dominant) + Status pill (only when not Active) */}
           <div className="flex items-center gap-2">
             <Link
               href={`/admin/partners/${partner.id}`}
@@ -124,7 +124,9 @@ function PartnerCard({
             >
               {displayName}
             </Link>
-            <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
+            {partner.status !== "active" && (
+              <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
+            )}
           </div>
 
           {/* Row 2: Metadata — recedes visually */}
@@ -152,7 +154,7 @@ function PartnerCard({
                 </span>
               </>
             )}
-            {partner.reportStatus && (
+            {partner.status === "active" && partner.reportStatus ? (
               <>
                 <span className="dl-type-micro text-[var(--text-3)] hidden sm:inline">·</span>
                 <span className="hidden sm:inline-flex items-center gap-1.5">
@@ -162,7 +164,17 @@ function PartnerCard({
                   <ReportStatusChip status={partner.reportStatus} />
                 </span>
               </>
-            )}
+            ) : partner.status !== "active" ? (
+              <>
+                <span className="dl-type-micro text-[var(--text-3)] hidden sm:inline">·</span>
+                <span className="hidden sm:inline-flex items-center gap-1.5">
+                  <span className="dl-type-micro normal-case tracking-normal text-[var(--text-3)]">
+                    Report
+                  </span>
+                  <span className="dl-type-caption text-[var(--text-3)]" title="Not tracked for inactive partners">—</span>
+                </span>
+              </>
+            ) : null}
           </div>
         </DataCardColumn>
 
@@ -200,10 +212,14 @@ function PartnerCard({
 
       {/* Mobile extras */}
       <div className="flex md:hidden items-center gap-2 ml-[52px] mt-1 mb-2">
-        <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
-        {partner.reportStatus && (
-          <ReportStatusChip status={partner.reportStatus} />
+        {partner.status !== "active" && (
+          <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
         )}
+        {partner.status === "active" && partner.reportStatus ? (
+          <ReportStatusChip status={partner.reportStatus} />
+        ) : partner.status !== "active" ? (
+          <span className="dl-type-caption text-[var(--text-3)]" title="Not tracked for inactive partners">Report —</span>
+        ) : null}
         <span className="dl-type-caption text-[var(--text-3)] tabular-nums">
           {partner.leadCount} leads
         </span>
