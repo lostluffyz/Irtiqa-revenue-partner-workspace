@@ -12,6 +12,7 @@ import {
   Target,
   CheckCircle2,
   ArrowUpRight,
+  ArrowRight,
   BarChart3,
   CalendarCheck,
   Milestone,
@@ -238,32 +239,32 @@ export default async function PartnerProgressPage() {
         <div className="flex items-center gap-2 mb-4">
           <BarChart3 className="h-3.5 w-3.5 text-[var(--text-3)]" />
           <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-3)]">
-            Daily Averages
+            Averages Per Report
           </p>
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <PerformanceCard
             icon={Target}
             iconBg="bg-[var(--hover-bg)] text-[var(--text-2)]"
             value={avgContacted}
-            label="Contacted / report"
-            caption={`Across ${totalReports} report${totalReports !== 1 ? "s" : ""}`}
+            label="Contacted"
+            caption={`avg per report · across ${totalReports} report${totalReports !== 1 ? "s" : ""}`}
             trend={hasReports ? contactedTrend : null}
           />
           <PerformanceCard
             icon={CalendarCheck}
             iconBg="bg-[var(--hover-bg)] text-[var(--text-2)]"
             value={avgAppointments}
-            label="Appointments / report"
-            caption={`Across ${totalReports} report${totalReports !== 1 ? "s" : ""}`}
+            label="Appointments"
+            caption={`avg per report · across ${totalReports} report${totalReports !== 1 ? "s" : ""}`}
             trend={hasReports ? apptsTrend : null}
           />
           <PerformanceCard
             icon={CheckCircle2}
             iconBg="bg-[var(--hover-bg)] text-[var(--text-2)]"
             value={avgDeals}
-            label="Deals / report"
-            caption={`Across ${totalReports} report${totalReports !== 1 ? "s" : ""}`}
+            label="Deals"
+            caption={`avg per report · across ${totalReports} report${totalReports !== 1 ? "s" : ""}`}
             trend={hasReports ? dealsTrend : null}
           />
         </div>
@@ -404,7 +405,7 @@ export default async function PartnerProgressPage() {
                 className="group inline-flex items-center gap-1 text-[12px] font-medium text-[var(--accent)] hover:underline focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2 rounded-[4px]"
               >
                 {statusBreakdown.not_contacted} waiting for first contact
-                <ArrowUpRight className="h-3 w-3 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                <ArrowRight className="h-3 w-3 transition-transform duration-150 group-hover:translate-x-0.5" />
               </Link>
             </div>
           ) : (
@@ -440,11 +441,26 @@ function PerformanceCard({
   trend: { pct: number; direction: "up" | "down" | "neutral"; isNew?: boolean } | null;
 }) {
   return (
-    <div className="surface p-4">
-      <div className="flex items-center justify-between mb-3">
-        <div className={`w-7 h-7 rounded-[8px] flex items-center justify-center ${iconBg}`}>
+    <div className="surface flex items-center gap-3 p-4 sm:block">
+      <div className="flex min-w-0 flex-1 items-center gap-3 sm:mb-3 sm:block sm:flex-none">
+        <div className={`hidden h-7 w-7 items-center justify-center rounded-[8px] sm:flex ${iconBg}`}>
           <Icon className="h-3.5 w-3.5" />
         </div>
+        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] sm:hidden ${iconBg}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+        <div className="min-w-0 sm:mt-3">
+          <p className="truncate text-[14px] font-semibold text-[var(--text-1)] sm:mt-1.5 sm:text-[12px] sm:font-medium sm:text-[var(--text-3)]">
+            {label}
+          </p>
+          {caption && (
+            <p className="mt-0.5 truncate text-[12px] text-[var(--text-3)] tabular-nums sm:text-[11px]">
+              {caption}
+            </p>
+          )}
+        </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
         {trend && trend.direction !== "neutral" && (trend.pct > 0 || trend.isNew) && (
           <span
             className={`inline-flex items-center gap-0.5 text-[11px] font-medium tabular-nums ${
@@ -459,18 +475,10 @@ function PerformanceCard({
             {trend.isNew ? "New" : `${trend.pct}%`}
           </span>
         )}
-      </div>
-      <p className="text-[24px] font-bold leading-none tracking-[-0.02em] text-[var(--text-1)] tabular-nums">
-        {value}
-      </p>
-      <p className="mt-1.5 text-[12px] font-medium text-[var(--text-3)]">
-        {label}
-      </p>
-      {caption && (
-        <p className="mt-0.5 text-[11px] text-[var(--text-3)] tabular-nums">
-          {caption}
+        <p className="text-[24px] font-bold leading-none tracking-[-0.02em] text-[var(--text-1)] tabular-nums">
+          {value}
         </p>
-      )}
+      </div>
     </div>
   );
 }

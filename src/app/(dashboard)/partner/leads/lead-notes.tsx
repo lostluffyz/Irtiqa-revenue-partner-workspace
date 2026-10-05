@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Check, Loader2 } from "lucide-react";
 import { updateLeadNotesAction } from "../actions";
 
-type SaveStatus = "idle" | "saving" | "saved";
+type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 interface LeadNotesProps {
   leadId: string;
@@ -25,10 +25,12 @@ export function LeadNotes({ leadId, initialNotes }: LeadNotesProps) {
       }
 
       setStatus("saving");
+      // Success vs failure comes straight from the existing action's
+      // return value: { error } means the save was rejected.
       const result = await updateLeadNotesAction(leadId, value);
 
       if (result.error) {
-        setStatus("idle");
+        setStatus("error");
         return;
       }
 
@@ -82,29 +84,42 @@ export function LeadNotes({ leadId, initialNotes }: LeadNotesProps) {
       <p className="text-[11px] text-[var(--text-3)]">
         Only visible to you and your admin.
       </p>
-      <div className="flex items-center justify-end h-4">
-        <span
-          className={`inline-flex items-center gap-1 text-[10px] tabular-nums transition-all duration-200 ${
-            status === "saving"
-              ? "text-[var(--text-3)]"
-              : status === "saved"
-                ? "text-[var(--status-success)]"
-                : "text-transparent"
-          }`}
-        >
-          {status === "saving" && (
-            <>
-              <Loader2 className="h-3 w-3 animate-spin" />
-              Saving...
-            </>
-          )}
-          {status === "saved" && (
-            <>
-              <Check className="h-3 w-3" />
-              Saved
-            </>
-          )}
-        </span>
+      <div className="flex items-center justify-end min-h-4 gap-2">
+        {status === "error" ? (
+          <span role="alert" className="inline-flex items-center gap-1.5 text-[12.5px] text-[var(--status-danger)]">
+            Couldn&apos;t save. Your note was not saved.
+            <button
+              type="button"
+              onClick={() => save(notes)}
+              className="font-medium underline underline-offset-2 hover:text-[var(--text-1)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2 rounded-[4px]"
+            >
+              Retry
+            </button>
+          </span>
+        ) : (
+          <span
+            className={`inline-flex items-center gap-1 text-[10px] tabular-nums transition-all duration-200 ${
+              status === "saving"
+                ? "text-[var(--text-3)]"
+                : status === "saved"
+                  ? "text-[var(--status-success)]"
+                  : "text-transparent"
+            }`}
+          >
+            {status === "saving" && (
+              <>
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Saving...
+              </>
+            )}
+            {status === "saved" && (
+              <>
+                <Check className="h-3 w-3" />
+                Saved
+              </>
+            )}
+          </span>
+        )}
       </div>
     </div>
   );

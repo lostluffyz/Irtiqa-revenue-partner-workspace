@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
   Target,
@@ -100,112 +99,195 @@ function LeadRow({
   isSelected: boolean;
   onSelect: () => void;
 }) {
+  const selectedRing = isSelected ? "ring-2 ring-[var(--accent)]/40 bg-[var(--accent-light)]/40" : "";
+  const rowKeyHandlers = {
+    onClick: onSelect,
+    role: "button" as const,
+    tabIndex: 0,
+    onKeyDown: (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        onSelect();
+      }
+    },
+  };
+
   return (
-    <div
-      className={`
-        group grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3
-        rounded-[var(--radius-soft-lg)] border border-[var(--border)] bg-[var(--surface)]
-        p-4 shadow-[var(--shadow-soft)]
-        cursor-pointer select-none
-        transition-shadow duration-150 hover:shadow-[var(--shadow-lift)]
-        focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2
-        ${isSelected ? "ring-2 ring-[var(--accent)]/40 bg-[var(--accent-light)]/40" : ""}
-      `}
-      onClick={onSelect}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onSelect();
-        }
-      }}
-      aria-label={`View details for ${lead.company_name}`}
-    >
-      {/* Avatar — neutral tile */}
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-soft-md)] bg-[var(--hover-bg)] text-[var(--text-2)]">
-        <Building2 className="h-5 w-5" />
+    <>
+      {/* ── Desktop row (two lines, fixed right column) ── */}
+      <div
+        className={`
+          group hidden grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 md:grid
+          rounded-[var(--radius-soft-lg)] border border-[var(--border)] bg-[var(--surface)]
+          px-4 py-3 shadow-[var(--shadow-soft)]
+          cursor-pointer select-none
+          transition-shadow duration-150 hover:shadow-[var(--shadow-lift)]
+          focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2
+          ${selectedRing}
+        `}
+        {...rowKeyHandlers}
+        aria-label={`View details for ${lead.company_name}`}
+      >
+        {/* Avatar — neutral tile */}
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-soft-md)] bg-[var(--hover-bg)] text-[var(--text-2)]">
+          <Building2 className="h-5 w-5" />
+        </div>
+
+        {/* Center: name + one meta line */}
+        <div className="min-w-0">
+          <h3
+            className="text-[14px] font-semibold text-[var(--text-1)] leading-snug truncate"
+            title={lead.company_name}
+          >
+            {lead.company_name}
+          </h3>
+          <div className="mt-1 flex min-w-0 items-center gap-1.5 text-[12px]">
+            {lead.industry && (
+              <>
+                <span className="shrink-0 rounded-[var(--radius-soft-pill)] bg-[var(--hover-bg)] px-2 py-0.5 text-[11px] text-[var(--text-2)]">
+                  {lead.industry}
+                </span>
+                <span aria-hidden="true" className="shrink-0 text-[var(--text-3)]">·</span>
+              </>
+            )}
+            {lead.phone ? (
+              <span className="flex min-w-0 items-center gap-1 text-[var(--text-2)] tabular-nums">
+                <Phone className="h-3 w-3 shrink-0 text-[var(--text-3)]" />
+                <span className="truncate">{lead.phone}</span>
+              </span>
+            ) : (
+              <span className="shrink-0 text-[var(--text-3)]">No phone</span>
+            )}
+            <span aria-hidden="true" className="shrink-0 text-[var(--text-3)]">·</span>
+            {lead.country ? (
+              <span className="flex min-w-0 items-center gap-1 text-[var(--text-2)]">
+                <MapPin className="h-3 w-3 shrink-0 text-[var(--text-3)]" />
+                <span className="truncate">{lead.country}</span>
+              </span>
+            ) : (
+              <span className="shrink-0 text-[var(--text-3)]">No country</span>
+            )}
+          </div>
+        </div>
+
+        {/* Right: fixed column — status, date, quick actions */}
+        <div className="flex w-[132px] shrink-0 flex-col items-end gap-1.5">
+          <div className="shrink-0 [&_button]:min-h-[28px] [&_button]:text-[12.5px]" onClick={(e) => e.stopPropagation()}>
+            <StatusBadge lead={lead} />
+          </div>
+          <span
+            className="text-[11px] text-[var(--text-3)] tabular-nums"
+            title={lead.assigned_at || undefined}
+          >
+            {lead.assigned_at ? formatRelativeDate(lead.assigned_at) : "—"}
+          </span>
+          <div className="flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect();
+              }}
+              className="flex items-center justify-center rounded-[var(--radius-soft-sm)] p-1.5 text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)] transition-colors duration-150"
+              aria-label="View lead details"
+            >
+              <Eye className="h-4 w-4" />
+            </button>
+            {lead.phone && (
+              <a
+                href={`tel:${lead.phone}`}
+                onClick={(e) => e.stopPropagation()}
+                className="flex items-center justify-center rounded-[var(--radius-soft-sm)] p-1.5 text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)] transition-colors duration-150"
+                aria-label={`Call ${lead.company_name}`}
+              >
+                <Phone className="h-4 w-4" />
+              </a>
+            )}
+            {lead.email && (
+              <a
+                href={`mailto:${lead.email}`}
+                onClick={(e) => e.stopPropagation()}
+                className="flex items-center justify-center rounded-[var(--radius-soft-sm)] p-1.5 text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)] transition-colors duration-150"
+                aria-label={`Email ${lead.company_name}`}
+              >
+                <Mail className="h-4 w-4" />
+              </a>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Center: name, industry pill, meta */}
-      <div className="min-w-0">
-        <h3
-          className="text-[14px] font-semibold text-[var(--text-1)] leading-snug line-clamp-2 md:line-clamp-1 md:truncate"
-          title={lead.company_name}
-        >
-          {lead.company_name}
-        </h3>
-        <div className="mt-1 flex min-w-0 items-center gap-2">
+      {/* ── Mobile card: three rows, same handlers ── */}
+      <div
+        className={`
+          rounded-[var(--radius-soft-lg)] border border-[var(--border)] bg-[var(--surface)]
+          p-4 shadow-[var(--shadow-soft)] md:hidden
+          cursor-pointer select-none
+          transition-shadow duration-150 hover:shadow-[var(--shadow-lift)]
+          focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2
+          ${selectedRing}
+        `}
+        {...rowKeyHandlers}
+        aria-label={`View details for ${lead.company_name}`}
+      >
+        {/* Row 1: avatar + name + Call */}
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-soft-md)] bg-[var(--hover-bg)] text-[var(--text-2)]">
+            <Building2 className="h-5 w-5" />
+          </div>
+          <h3
+            className="min-w-0 flex-1 text-[15px] font-semibold text-[var(--text-1)] leading-snug line-clamp-2"
+            title={lead.company_name}
+          >
+            {lead.company_name}
+          </h3>
+          {lead.phone && (
+            <a
+              href={`tel:${lead.phone}`}
+              onClick={(e) => e.stopPropagation()}
+              aria-label={`Call ${lead.company_name}`}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] text-white transition-all duration-150 hover:brightness-110 active:scale-95"
+            >
+              <Phone className="h-5 w-5" />
+            </a>
+          )}
+        </div>
+        {/* Row 2: status + industry + date */}
+        <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1.5">
+          <span onClick={(e) => e.stopPropagation()}>
+            <StatusBadge lead={lead} />
+          </span>
           {lead.industry && (
-            <span className="max-w-[160px] truncate rounded-[var(--radius-soft-pill)] bg-[var(--hover-bg)] px-2 py-0.5 text-[11px] text-[var(--text-2)]">
+            <span className="max-w-[140px] truncate rounded-[var(--radius-soft-pill)] bg-[var(--hover-bg)] px-2 py-0.5 text-[11px] text-[var(--text-2)]">
               {lead.industry}
             </span>
           )}
+          <span
+            className="ml-auto text-[11px] text-[var(--text-3)] tabular-nums"
+            title={lead.assigned_at || undefined}
+          >
+            {lead.assigned_at ? formatRelativeDate(lead.assigned_at) : "—"}
+          </span>
         </div>
-        <div className="mt-1 flex min-w-0 items-center gap-3 text-[12px]">
+        {/* Row 3: phone + country, wrapping, never truncated */}
+        <div className="mt-2 flex flex-wrap items-center border-t border-[var(--border-subtle)] pt-2 text-[13px] [column-gap:12px] [row-gap:4px]">
           {lead.phone ? (
-            <span className="flex min-w-0 items-center gap-1 text-[var(--text-2)] tabular-nums">
-              <Phone className="h-3 w-3 shrink-0 text-[var(--text-3)]" />
-              <span className="truncate">{lead.phone}</span>
+            <span className="flex items-center gap-1.5 text-[var(--text-1)] tabular-nums">
+              <Phone className="h-3.5 w-3.5 shrink-0 text-[var(--text-3)]" />
+              {lead.phone}
             </span>
           ) : (
             <span className="text-[var(--text-3)]">No phone</span>
           )}
           {lead.country && (
-            <span className="flex min-w-0 items-center gap-1 text-[var(--text-2)]">
-              <MapPin className="h-3 w-3 shrink-0 text-[var(--text-3)]" />
-              <span className="truncate">{lead.country}</span>
+            <span className="flex items-center gap-1.5 text-[var(--text-2)]">
+              <MapPin className="h-3.5 w-3.5 shrink-0 text-[var(--text-3)]" />
+              {lead.country}
             </span>
           )}
         </div>
       </div>
-
-      {/* Right: fixed column — status, date, quick actions */}
-      <div className="flex w-[132px] shrink-0 flex-col items-end gap-1.5">
-        <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
-          <StatusBadge lead={lead} />
-        </div>
-        <span
-          className="text-[11px] text-[var(--text-3)] tabular-nums"
-          title={lead.assigned_at || undefined}
-        >
-          {lead.assigned_at ? formatRelativeDate(lead.assigned_at) : "—"}
-        </span>
-        <div className="flex items-center gap-0.5 transition-opacity duration-150 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelect();
-            }}
-            className="flex min-h-[44px] min-w-[40px] items-center justify-center rounded-[var(--radius-soft-sm)] text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)] transition-colors duration-150 md:min-h-0 md:min-w-0 md:p-1.5"
-            aria-label="View lead details"
-          >
-            <Eye className="h-4 w-4" />
-          </button>
-          {lead.phone && (
-            <a
-              href={`tel:${lead.phone}`}
-              onClick={(e) => e.stopPropagation()}
-              className="flex min-h-[44px] min-w-[40px] items-center justify-center rounded-[var(--radius-soft-sm)] text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)] transition-colors duration-150 md:min-h-0 md:min-w-0 md:p-1.5"
-              aria-label={`Call ${lead.company_name}`}
-            >
-              <Phone className="h-4 w-4" />
-            </a>
-          )}
-          {lead.email && (
-            <a
-              href={`mailto:${lead.email}`}
-              onClick={(e) => e.stopPropagation()}
-              className="flex min-h-[44px] min-w-[40px] items-center justify-center rounded-[var(--radius-soft-sm)] text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)] transition-colors duration-150 md:min-h-0 md:min-w-0 md:p-1.5"
-              aria-label={`Email ${lead.company_name}`}
-            >
-              <Mail className="h-4 w-4" />
-            </a>
-          )}
-        </div>
-      </div>
-    </div>
+    </>
   );
 }
 
@@ -441,39 +523,37 @@ export function LeadsTableWrapper({
 
       {/* ─── Pagination ─── */}
       {total > 0 && (
-        <div className="sticky bottom-0 z-10 flex flex-col items-center gap-2 border-t border-[var(--border-subtle)] bg-[var(--canvas)]/95 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur md:flex-row md:justify-between">
-          <span className="text-[12px] text-[var(--text-3)] tabular-nums">
+        <>
+          <p className="text-center text-[13px] text-[var(--text-3)] tabular-nums md:text-left">
             {totalPages > 1
               ? `Showing ${startIdx}–${endIdx} of ${total} leads`
               : `${total} lead${total === 1 ? "" : "s"}`}
-          </span>
+          </p>
           {totalPages > 1 && (
-            <div className="inline-flex items-center gap-1 rounded-[var(--radius-soft-pill)] border border-[var(--border)] bg-[var(--surface)] px-2 py-1 shadow-[var(--shadow-soft)]">
+            <div className="sticky bottom-[calc(64px+12px+12px+env(safe-area-inset-bottom))] z-10 mx-auto flex w-fit items-center gap-1 rounded-[var(--radius-soft-pill)] border border-[var(--border)] bg-[var(--surface)] px-2 py-1 shadow-[var(--shadow-soft)] md:bottom-0">
               {page > 1 && (
-                <a href={buildPageUrl(page - 1)}>
-                  <Button variant="ghost" size="sm" className="min-h-[44px] md:min-h-0">
-                    <ChevronLeft className="h-3.5 w-3.5" />
-                    Previous
-                  </Button>
+                <a href={buildPageUrl(page - 1)} aria-label="Previous page">
+                  <span className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-[var(--text-2)] transition-colors duration-150 hover:bg-[var(--hover-bg)] hover:text-[var(--text-1)] md:min-h-0 md:min-w-0 md:p-1.5">
+                    <ChevronLeft className="h-4 w-4" />
+                  </span>
                 </a>
               )}
-              <span className="px-2 text-[12px] text-[var(--text-2)] tabular-nums whitespace-nowrap">
-                Page {page} of {totalPages}
+              <span className="px-1 text-[13px] text-[var(--text-2)] tabular-nums whitespace-nowrap">
+                {page} / {totalPages}
               </span>
               {page < totalPages && (
-                <a href={buildPageUrl(page + 1)}>
-                  <Button variant="ghost" size="sm" className="min-h-[44px] md:min-h-0">
-                    Next
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  </Button>
+                <a href={buildPageUrl(page + 1)} aria-label="Next page">
+                  <span className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-[var(--text-2)] transition-colors duration-150 hover:bg-[var(--hover-bg)] hover:text-[var(--text-1)] md:min-h-0 md:min-w-0 md:p-1.5">
+                    <ChevronRight className="h-4 w-4" />
+                  </span>
                 </a>
               )}
             </div>
           )}
-        </div>
+          {/* Clearance so the sticky bar never covers the last card */}
+          <div aria-hidden="true" className="h-14" />
+        </>
       )}
-      {/* Clearance so the sticky bar never covers the last card */}
-      <div aria-hidden="true" className="h-3" />
 
       {/* ─── Lead Details Drawer ─── */}
       <LeadDetailsDrawer

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { motion, LayoutGroup } from "motion/react";
@@ -23,7 +23,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   LogOut,
-  LayoutGrid,
+  Ellipsis,
+  X,
 } from "lucide-react";
 
 const NAV_INDICATOR_ID = "partner-nav-indicator";
@@ -171,6 +172,18 @@ function Sidebar({
           )}
         </Link>
 
+        {/* Mobile close button — the FAB is gone, this + overlay + Esc close the drawer */}
+        {isMobile && (
+          <button
+            type="button"
+            onClick={onCloseMobile}
+            aria-label="Close menu"
+            className="ml-auto flex min-h-[44px] min-w-[44px] items-center justify-center rounded-[12px] text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)] transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-[-2px]"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
+
         {/* Desktop toggle button */}
         {!isMobile && !collapsed && (
           <button
@@ -279,14 +292,14 @@ function Sidebar({
 
 function MobileDrawer({
   open,
-  onToggle,
   onClose,
   partnerName,
+  returnFocusRef,
 }: {
   open: boolean;
-  onToggle: () => void;
   onClose: () => void;
   partnerName: string;
+  returnFocusRef: React.RefObject<HTMLButtonElement | null>;
 }) {
   const [mounted, setMounted] = useState(false);
 
@@ -294,24 +307,29 @@ function MobileDrawer({
     setMounted(true);
   }, []);
 
+  // Escape closes; focus moves into the drawer on open and back on close.
+  useEffect(() => {
+    if (!mounted) return;
+    if (open) {
+      function handleKey(e: KeyboardEvent) {
+        if (e.key === "Escape") onClose();
+      }
+      document.addEventListener("keydown", handleKey);
+      const panel = document.getElementById("partner-mobile-menu");
+      const first = panel?.querySelector<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      first?.focus();
+      return () => document.removeEventListener("keydown", handleKey);
+    }
+    returnFocusRef.current?.focus();
+    return undefined;
+  }, [open, mounted, onClose, returnFocusRef]);
+
   if (!mounted) return null;
 
   return createPortal(
     <>
-      {/* ── FAB: hamburger ↔ X, never moves ── */}
-      <button
-        onClick={onToggle}
-        className={`mobile-fab md:hidden ${open ? "is-open" : ""}`}
-        aria-label={open ? "Close menu" : "Open menu"}
-        aria-expanded={open}
-      >
-        <div className="mobile-fab-icon">
-          <span />
-          <span />
-          <span />
-        </div>
-      </button>
-
       {/* ── Backdrop: fixed, blurred, fades in ── */}
       <div
         className={`mobile-sidebar-overlay md:hidden ${open ? "is-open" : ""}`}
@@ -339,7 +357,12 @@ function MobileDrawerPanel({
   partnerName: string;
 }) {
   return (
-    <div className={`mobile-sidebar md:hidden ${open ? "is-open" : ""}`}>
+    <div
+      id="partner-mobile-menu"
+      role="dialog"
+      aria-label="Menu"
+      className={`mobile-sidebar md:hidden ${open ? "is-open" : ""}`}
+    >
       <Sidebar
         collapsed={false}
         onToggle={onClose}
@@ -367,8 +390,8 @@ export function PartnerShell({
   const pathname = usePathname();
 
   const closeMobile = useCallback(() => setMobileOpen(false), []);
-  const toggleMobile = useCallback(() => setMobileOpen(prev => !prev), []);
   const openMobile = useCallback(() => setMobileOpen(true), []);
+  const moreBtnRef = useRef<HTMLButtonElement | null>(null);
   const crumbs = getBreadcrumbSegments(pathname);
 
   const isActiveTab = (href: string) =>
@@ -449,6 +472,8 @@ export function PartnerShell({
       {/* ── Mobile bottom tab bar — partner only, below md ── */}
       <nav
         aria-label="Primary"
+        aria-hidden={mobileOpen || undefined}
+        inert={mobileOpen || undefined}
         className="md:hidden fixed left-3 right-3 bottom-[calc(12px+env(safe-area-inset-bottom))] z-40 h-16 rounded-[24px] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-drawer)]"
       >
         <div className="grid h-full grid-cols-5 items-stretch px-1">
@@ -483,21 +508,34 @@ export function PartnerShell({
           })}
           <button
             type="button"
+            ref={moreBtnRef}
             onClick={openMobile}
             aria-label="More options"
+            aria-haspopup="dialog"
             aria-expanded={mobileOpen}
+            aria-controls="partner-mobile-menu"
             className="flex min-h-[44px] flex-col items-center justify-center gap-0.5 rounded-[18px] focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-[-2px]"
           >
-            <span className="flex h-7 items-center justify-center rounded-full px-4">
-              <LayoutGrid className="h-5 w-5 text-[var(--text-3)]" />
+            <span
+              className={`flex h-7 items-center justify-center rounded-full px-4 transition-colors duration-150 ${
+                mobileOpen ? "bg-[var(--accent-light)]" : ""
+              }`}
+            >
+              <Ellipsis className={`h-5 w-5 ${mobileOpen ? "text-[var(--accent)]" : "text-[var(--text-3)]"}`} />
             </span>
-            <span className="text-[11px] leading-none text-[var(--text-3)]">More</span>
+            <span
+              className={`text-[11px] leading-none ${
+                mobileOpen ? "font-semibold text-[var(--text-1)]" : "text-[var(--text-3)]"
+              }`}
+            >
+              More
+            </span>
           </button>
         </div>
       </nav>
 
       {/* ── Mobile Drawer — portal'd to <body>, invisible to this layout ── */}
-      <MobileDrawer open={mobileOpen} onToggle={toggleMobile} onClose={closeMobile} partnerName={partnerName} />
+      <MobileDrawer open={mobileOpen} onClose={closeMobile} partnerName={partnerName} returnFocusRef={moreBtnRef} />
     </div>
   );
 }

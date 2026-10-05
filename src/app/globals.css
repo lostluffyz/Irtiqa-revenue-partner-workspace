@@ -1798,7 +1798,7 @@ body {
     left: 0;
     bottom: 0;
     z-index: 51;
-    width: min(280px, 85vw);
+    width: min(86vw, 300px);
     background: var(--surface);
     border-right: 1px solid var(--border);
     box-shadow: var(--shadow-4);
@@ -1809,6 +1809,11 @@ body {
       visibility 0s linear 300ms;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+  }
+
+  /* Inner sidebar fills the panel exactly — same width, no white strip */
+  .mobile-sidebar .sidebar {
+    width: 100% !important;
   }
 
   .mobile-sidebar.is-open {

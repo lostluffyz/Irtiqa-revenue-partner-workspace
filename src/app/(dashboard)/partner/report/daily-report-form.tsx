@@ -15,6 +15,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
 import { PageHeader } from "@/components/ui/page-header";
+import { formatDeadlineTime } from "@/components/dashboard/helpers";
+import { DueLine } from "@/components/dashboard/use-viewer-deadline";
 import {
   Dialog,
   DialogContent,
@@ -56,6 +58,8 @@ function formatShortTime(dateStr: string): string {
 interface DailyReportViewProps {
   report: DailyReport | null;
   date: string;
+  deadlineHour?: number;
+  deadlineMinute?: number;
 }
 
 // ============================================
@@ -179,7 +183,7 @@ function ReflectionBlock({ title, icon: Icon, content }: { title: string; icon: 
 // Main Component
 // ============================================
 
-export function DailyReportView({ report, date }: DailyReportViewProps) {
+export function DailyReportView({ report, date, deadlineHour, deadlineMinute }: DailyReportViewProps) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const submitBtnRef = useRef<HTMLButtonElement>(null);
@@ -264,6 +268,12 @@ export function DailyReportView({ report, date }: DailyReportViewProps) {
             )
           }
         />
+        {!isSubmitted && deadlineHour !== undefined && deadlineMinute !== undefined && (
+          <p className="mt-2 text-[13px] text-[var(--text-3)] tabular-nums">
+            Due {formatDeadlineTime(deadlineHour, deadlineMinute)} UTC ·{" "}
+            <DueLine utcHour={deadlineHour} utcMinute={deadlineMinute} />
+          </p>
+        )}
         <div className="mt-4 h-px bg-[var(--border-subtle)]" />
       </div>
 
