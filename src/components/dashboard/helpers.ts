@@ -409,3 +409,13 @@ export function getViewerShortZoneName(now: Date = new Date(), timeZone?: string
   }).formatToParts(now);
   return parts.find((p) => p.type === "timeZoneName")?.value ?? "";
 }
+
+/**
+ * Short abbreviation for a KNOWN IANA zone at a reference moment
+ * ("UTC" is stable everywhere; others follow the runtime ICU database,
+ * e.g. Asia/Kolkata reports "GMT+5:30" in Node and "IST" in Chrome).
+ * Pure and deterministic per runtime — safe for tests with explicit zones.
+ */
+export function getZoneAbbreviation(timeZone: string, at: Date = new Date()): string {
+  return getViewerShortZoneName(at, timeZone);
+}

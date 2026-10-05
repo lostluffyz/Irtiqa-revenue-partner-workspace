@@ -3,19 +3,11 @@
 import { getRelativeTimePartner } from "@/components/dashboard/helpers";
 
 interface ActivityProps {
-  programDay: number;
   todayReport?: { created_at: string } | null;
-  totalReports: number;
   announcements: Array<{ id: string; title: string; is_pinned: boolean; created_at: string }>;
-  totalLeads: number;
 }
 
-export function MobileActivity({ programDay, todayReport, totalReports, announcements, totalLeads }: ActivityProps) {
-  void programDay;
-  void totalReports;
-  void totalLeads;
-  const hasRealItems = !!todayReport || announcements.length > 0;
-
+export function MobileActivity({ todayReport, announcements }: ActivityProps) {
   return (
     <div className="mobile-section-card">
       <div className="mobile-section-header">
@@ -40,15 +32,6 @@ export function MobileActivity({ programDay, todayReport, totalReports, announce
             </div>
           </div>
         ))}
-        {!hasRealItems && (
-          <div className="mobile-activity-item">
-            <div className="mobile-activity-dot" style={{ backgroundColor: "var(--accent)" }} />
-            <div className="flex-1 min-w-0">
-              <p className="mobile-activity-text">No activity yet today</p>
-              <p className="mobile-activity-time">Submit your daily report to get started</p>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

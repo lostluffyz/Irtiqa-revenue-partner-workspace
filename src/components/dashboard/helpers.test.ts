@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatReportDate, getBreadcrumbSegments, formatWebsiteHostname, formatShortMonthDay, formatShortDateRange, formatJobDateTime, getViewerShortZoneName } from "./helpers";
+import { formatReportDate, getBreadcrumbSegments, formatWebsiteHostname, formatShortMonthDay, formatShortDateRange, formatJobDateTime, getViewerShortZoneName, getZoneAbbreviation } from "./helpers";
 
 describe("formatReportDate", () => {
   it("returns Today for the reference date", () => {
@@ -142,5 +142,17 @@ describe("getViewerShortZoneName", () => {
 
   it("returns a non-empty name for the viewer locale", () => {
     expect(getViewerShortZoneName().length).toBeGreaterThan(0);
+  });
+});
+
+describe("getZoneAbbreviation", () => {
+  it("is stable for UTC", () => {
+    expect(getZoneAbbreviation("UTC", new Date("2026-10-04T12:00:00Z"))).toBe("UTC");
+  });
+
+  it("names a fixed-offset zone honestly per runtime ICU", () => {
+    const name = getZoneAbbreviation("Asia/Kolkata", new Date("2026-10-04T12:00:00Z"));
+    expect(name.length).toBeGreaterThan(0);
+    expect(["IST", "GMT+5:30"]).toContain(name);
   });
 });

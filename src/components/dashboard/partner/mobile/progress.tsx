@@ -21,23 +21,34 @@ export function MobileProgress({ programDay, daysRemaining, progressPct }: Progr
             <span className="mobile-progress-sub">of 30 · {daysRemaining} days remaining</span>
           </div>
         </div>
-        <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[var(--accent-light)]">
-          <TrendingUp className="h-5 w-5 text-[var(--accent)]" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[var(--hover-bg)]">
+          <TrendingUp className="h-5 w-5 text-[var(--text-2)]" />
         </div>
       </div>
 
       <div className="mobile-section-body">
-        <div
-          className="mobile-progress-bar-container"
-          role="progressbar"
-          aria-valuenow={programDay}
-          aria-valuemin={0}
-          aria-valuemax={30}
-          aria-label={`Program progress: day ${programDay} of 30`}
-        >
+        <div className="mb-1.5 flex items-center justify-between text-[10px] tabular-nums text-[var(--text-3)]">
+          <span>Day 1</span>
+          <span>Day 30</span>
+        </div>
+        <div className="relative">
           <div
-            className="mobile-progress-bar-fill"
-            style={{ width: `${progressPct}%` }}
+            className="mobile-progress-bar-container"
+            role="progressbar"
+            aria-valuenow={programDay}
+            aria-valuemin={0}
+            aria-valuemax={30}
+            aria-label={`Program progress: day ${programDay} of 30`}
+          >
+            <div
+              className="mobile-progress-bar-fill"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+          <div
+            className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[var(--accent)]"
+            style={{ left: `${Math.min(100, (programDay / 30) * 100)}%` }}
+            title={`Today: Day ${programDay}`}
           />
         </div>
       </div>
