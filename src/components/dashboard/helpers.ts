@@ -410,6 +410,28 @@ export function getViewerShortZoneName(now: Date = new Date(), timeZone?: string
   return parts.find((p) => p.type === "timeZoneName")?.value ?? "";
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   Program Milestones — Display copy for progress percentage
+   ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Milestone copy for a program progress percentage (day/total).
+ * Pure function — thresholds mirror the bar fill exactly.
+ */
+export function getProgressMilestoneCopy(day: number, total: number): string | null {
+  if (total <= 0) return null;
+  const pct = (day / total) * 100;
+  if (pct < 0) return null;
+  if (pct < 10) return "Just getting started";
+  if (pct < 25) return "Warming up";
+  if (pct < 40) return "Over a quarter in";
+  if (pct < 60) return "Around the halfway point";
+  if (pct < 80) return "More than halfway";
+  if (pct < 95) return "In the home stretch";
+  if (pct <= 100) return "Almost done";
+  return null;
+}
+
 /**
  * Short abbreviation for a KNOWN IANA zone at a reference moment
  * ("UTC" is stable everywhere; others follow the runtime ICU database,

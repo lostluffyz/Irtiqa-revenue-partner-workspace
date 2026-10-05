@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatReportDate, getBreadcrumbSegments, formatWebsiteHostname, formatShortMonthDay, formatShortDateRange, formatJobDateTime, getViewerShortZoneName, getZoneAbbreviation } from "./helpers";
+import { formatReportDate, getBreadcrumbSegments, formatWebsiteHostname, formatShortMonthDay, formatShortDateRange, formatJobDateTime, getViewerShortZoneName, getZoneAbbreviation, getProgressMilestoneCopy } from "./helpers";
 
 describe("formatReportDate", () => {
   it("returns Today for the reference date", () => {
@@ -154,5 +154,30 @@ describe("getZoneAbbreviation", () => {
     const name = getZoneAbbreviation("Asia/Kolkata", new Date("2026-10-04T12:00:00Z"));
     expect(name.length).toBeGreaterThan(0);
     expect(["IST", "GMT+5:30"]).toContain(name);
+  });
+});
+
+describe("getProgressMilestoneCopy", () => {
+  it("covers every boundary", () => {
+    expect(getProgressMilestoneCopy(0, 30)).toBe("Just getting started");
+    expect(getProgressMilestoneCopy(2, 30)).toBe("Just getting started");
+    expect(getProgressMilestoneCopy(3, 30)).toBe("Warming up");
+    expect(getProgressMilestoneCopy(7, 30)).toBe("Warming up");
+    expect(getProgressMilestoneCopy(8, 30)).toBe("Over a quarter in");
+    expect(getProgressMilestoneCopy(11, 30)).toBe("Over a quarter in");
+    expect(getProgressMilestoneCopy(12, 30)).toBe("Around the halfway point");
+    expect(getProgressMilestoneCopy(14, 30)).toBe("Around the halfway point");
+    expect(getProgressMilestoneCopy(18, 30)).toBe("More than halfway");
+    expect(getProgressMilestoneCopy(23, 30)).toBe("More than halfway");
+    expect(getProgressMilestoneCopy(24, 30)).toBe("In the home stretch");
+    expect(getProgressMilestoneCopy(28, 30)).toBe("In the home stretch");
+    expect(getProgressMilestoneCopy(29, 30)).toBe("Almost done");
+    expect(getProgressMilestoneCopy(30, 30)).toBe("Almost done");
+  });
+
+  it("returns null outside 0-100", () => {
+    expect(getProgressMilestoneCopy(-1, 30)).toBeNull();
+    expect(getProgressMilestoneCopy(0, 0)).toBeNull();
+    expect(getProgressMilestoneCopy(31, 30)).toBeNull();
   });
 });

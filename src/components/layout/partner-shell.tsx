@@ -23,6 +23,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   LogOut,
+  LayoutGrid,
 } from "lucide-react";
 
 const NAV_INDICATOR_ID = "partner-nav-indicator";
@@ -367,7 +368,18 @@ export function PartnerShell({
 
   const closeMobile = useCallback(() => setMobileOpen(false), []);
   const toggleMobile = useCallback(() => setMobileOpen(prev => !prev), []);
+  const openMobile = useCallback(() => setMobileOpen(true), []);
   const crumbs = getBreadcrumbSegments(pathname);
+
+  const isActiveTab = (href: string) =>
+    pathname === href || (href !== "/partner" && pathname.startsWith(href));
+
+  const TABS = [
+    { href: "/partner", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/partner/leads", label: "My Leads", icon: Target },
+    { href: "/partner/report", label: "Report", icon: FileText },
+    { href: "/partner/progress", label: "Progress", icon: TrendingUp },
+  ] as const;
 
   // Hide the loading overlay when the partner shell mounts
   useEffect(() => {
@@ -428,11 +440,61 @@ export function PartnerShell({
         </header>
 
         <main className="flex-1 overflow-y-auto">
-          <div className="max-w-[1200px] mx-auto px-4 py-6 md:px-10 md:py-8 mobile-content-pad">
+          <div className="max-w-[1200px] mx-auto px-4 py-6 md:px-10 md:py-8 mobile-content-pad tabbar-clearance">
             <PageTransition>{children}</PageTransition>
           </div>
         </main>
       </div>
+
+      {/* ── Mobile bottom tab bar — partner only, below md ── */}
+      <nav
+        aria-label="Primary"
+        className="md:hidden fixed left-3 right-3 bottom-[calc(12px+env(safe-area-inset-bottom))] z-40 h-16 rounded-[24px] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-drawer)]"
+      >
+        <div className="grid h-full grid-cols-5 items-stretch px-1">
+          {TABS.map((tab) => {
+            const active = isActiveTab(tab.href);
+            return (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                aria-current={active ? "page" : undefined}
+                aria-label={tab.label}
+                className="flex min-h-[44px] flex-col items-center justify-center gap-0.5 rounded-[18px] focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-[-2px]"
+              >
+                <span
+                  className={`flex h-7 items-center justify-center rounded-full px-4 transition-colors duration-150 ${
+                    active ? "bg-[var(--accent-light)]" : ""
+                  }`}
+                >
+                  <tab.icon
+                    className={`h-5 w-5 ${active ? "text-[var(--accent)]" : "text-[var(--text-3)]"}`}
+                  />
+                </span>
+                <span
+                  className={`text-[11px] leading-none ${
+                    active ? "font-semibold text-[var(--text-1)]" : "text-[var(--text-3)]"
+                  }`}
+                >
+                  {tab.label}
+                </span>
+              </Link>
+            );
+          })}
+          <button
+            type="button"
+            onClick={openMobile}
+            aria-label="More options"
+            aria-expanded={mobileOpen}
+            className="flex min-h-[44px] flex-col items-center justify-center gap-0.5 rounded-[18px] focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-[-2px]"
+          >
+            <span className="flex h-7 items-center justify-center rounded-full px-4">
+              <LayoutGrid className="h-5 w-5 text-[var(--text-3)]" />
+            </span>
+            <span className="text-[11px] leading-none text-[var(--text-3)]">More</span>
+          </button>
+        </div>
+      </nav>
 
       {/* ── Mobile Drawer — portal'd to <body>, invisible to this layout ── */}
       <MobileDrawer open={mobileOpen} onToggle={toggleMobile} onClose={closeMobile} partnerName={partnerName} />

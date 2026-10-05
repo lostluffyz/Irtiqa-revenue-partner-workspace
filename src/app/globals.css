@@ -1825,6 +1825,13 @@ body {
     padding-bottom: 40px;
   }
 
+  /* ── Partner tab-bar clearance (mobile only) ──
+     64px bar + 12px inset + 16px breathing room + safe area.
+     Declared after .mobile-content-pad so it wins for the bottom edge. */
+  .tabbar-clearance {
+    padding-bottom: calc(104px + env(safe-area-inset-bottom));
+  }
+
   /* ── Micro-interactions ── */
   .mobile-card-press {
     transition: transform 120ms ease, box-shadow 150ms ease;
