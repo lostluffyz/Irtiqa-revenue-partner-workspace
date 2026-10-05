@@ -80,11 +80,11 @@ export function MobilePartnerDashboard({ pageData }: { pageData: PartnerPageData
         </DashboardEntrance>
       ) : (
         <div className="mobile-section-card">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 py-1">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 p-4">
             <p className="text-[13px] text-[var(--text-2)]">Nothing new right now.</p>
             <Link
               href="/partner/announcements"
-              className="inline-flex items-center gap-1 text-[12px] font-medium text-[var(--text-3)]"
+              className="inline-flex min-h-[44px] items-center gap-1 text-[12px] font-medium text-[var(--text-3)]"
             >
               View announcements
               <ArrowRight className="h-3 w-3" />
