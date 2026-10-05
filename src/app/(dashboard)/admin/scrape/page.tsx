@@ -275,7 +275,7 @@ export default function ScrapePage() {
               Default 100. Maximum 1000 leads per job.
             </p>
           </div>
-          <div className="flex flex-col justify-end gap-1">
+          <div className="flex flex-col justify-start gap-1 sm:pt-6">
             <label className="flex min-h-[44px] cursor-pointer items-center gap-2.5 text-[13px] text-[var(--text-1)] md:min-h-0">
               <input
                 type="checkbox"
@@ -436,11 +436,19 @@ export default function ScrapePage() {
                       <th className="w-[80px] px-4 py-2.5 text-right text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] whitespace-nowrap tabular-nums">
                         Skipped
                       </th>
-                      <th className="w-[130px] px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] whitespace-nowrap">
+                      <th className="w-[140px] px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)]">
                         Status
                       </th>
-                      <th className="w-[130px] px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] whitespace-nowrap">
-                        Created{tzLabel ? ` (${tzLabel})` : ""}
+                      <th
+                        className="w-[140px] px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)]"
+                        title={tzLabel ? `All times shown in ${tzLabel}` : "All times shown in your local timezone"}
+                      >
+                        <span className="whitespace-nowrap">Created</span>
+                        {tzLabel && (
+                          <span className="mt-0.5 block text-[10px] font-normal normal-case tracking-normal text-[var(--text-3)]">
+                            {tzLabel}
+                          </span>
+                        )}
                       </th>
                     </tr>
                   </thead>
@@ -482,7 +490,7 @@ export default function ScrapePage() {
                         <td className="px-4 py-2.5">
                           <StatusPill status={job.status} stuck={isPossiblyStuck(job, nowMs)} />
                           {job.error_message && (
-                            <p className="mt-1 max-w-48 truncate text-xs text-[var(--status-danger)]" title={job.error_message}>
+                            <p className="mt-1 max-w-full truncate text-xs text-[var(--status-danger)]" title={job.error_message}>
                               {job.error_message}
                             </p>
                           )}
