@@ -122,12 +122,14 @@ function Sidebar({
   partnerName,
   isMobile = false,
   onCloseMobile,
+  variant = "default",
 }: {
   collapsed: boolean;
   onToggle: () => void;
   partnerName: string;
   isMobile?: boolean;
   onCloseMobile?: () => void;
+  variant?: "default" | "drawer";
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -151,7 +153,11 @@ function Sidebar({
   return (
     <aside
       className={`sidebar flex flex-col h-full transition-[width] duration-200 ease-out ${
-        collapsed ? "w-[var(--sidebar-collapsed-width)]" : "w-[var(--sidebar-width)]"
+        variant === "drawer"
+          ? "w-full"
+          : collapsed
+            ? "w-[var(--sidebar-collapsed-width)]"
+            : "w-[var(--sidebar-width)]"
       }`}
     >
       {/* ── Brand ── */}
@@ -308,9 +314,12 @@ function MobileDrawer({
   }, []);
 
   // Escape closes; focus moves into the drawer on open and back on close.
+  // The prevOpenRef guard prevents stealing focus on first mount.
+  const prevOpenRef = useRef(false);
   useEffect(() => {
     if (!mounted) return;
     if (open) {
+      prevOpenRef.current = true;
       function handleKey(e: KeyboardEvent) {
         if (e.key === "Escape") onClose();
       }
@@ -322,7 +331,10 @@ function MobileDrawer({
       first?.focus();
       return () => document.removeEventListener("keydown", handleKey);
     }
-    returnFocusRef.current?.focus();
+    if (prevOpenRef.current) {
+      prevOpenRef.current = false;
+      returnFocusRef.current?.focus();
+    }
     return undefined;
   }, [open, mounted, onClose, returnFocusRef]);
 
@@ -367,6 +379,7 @@ function MobileDrawerPanel({
         collapsed={false}
         onToggle={onClose}
         partnerName={partnerName}
+        variant="drawer"
         isMobile
         onCloseMobile={onClose}
       />
@@ -463,7 +476,7 @@ export function PartnerShell({
         </header>
 
         <main className="flex-1 overflow-y-auto">
-          <div className="max-w-[1200px] mx-auto px-4 py-6 md:px-10 md:py-8 mobile-content-pad tabbar-clearance">
+          <div className="max-w-[1200px] mx-auto px-4 py-6 md:px-10 md:py-8 mobile-content-pad partner-top-pad tabbar-clearance">
             <PageTransition>{children}</PageTransition>
           </div>
         </main>

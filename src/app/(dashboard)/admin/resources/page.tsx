@@ -1,12 +1,22 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { EmptyState } from "@/components/ui/empty-state";
-import { BookOpen, Plus, FileText, Video, Link as LinkIcon, HelpCircle, ExternalLink } from "lucide-react";
+import { Plus, BookOpen } from "lucide-react";
 import Link from "next/link";
 import { ResourceActions } from "./resource-actions";
+import {
+  ResourceCard,
+  EmptyContentCard,
+  type ResourceType,
+} from "@/components/cards/content-cards";
 import type { Resource } from "@/types/database";
+
+const TYPE_LABELS: Record<string, string> = {
+  document: "Documents",
+  video: "Videos",
+  link: "Links",
+  faq: "FAQs",
+};
 
 async function getResources(): Promise<Resource[]> {
   const supabase = await createClient();
@@ -23,13 +33,6 @@ async function getResources(): Promise<Resource[]> {
 
   return (data || []) as Resource[];
 }
-
-const TYPE_META: Record<string, { icon: React.ComponentType<{ className?: string }>; label: string }> = {
-  document: { icon: FileText, label: "Document" },
-  video: { icon: Video, label: "Video" },
-  link: { icon: LinkIcon, label: "Link" },
-  faq: { icon: HelpCircle, label: "FAQ" },
-};
 
 const TYPE_ORDER = ["document", "video", "link", "faq"];
 
@@ -52,8 +55,8 @@ export default async function ResourcesPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-start justify-between mb-8">
-        <div>
+      <div className="flex items-start justify-between gap-3 mb-8 max-sm:flex-col max-sm:items-stretch">
+        <div className="min-w-0 flex-1">
           <h1 className="text-[28px] font-bold tracking-[-0.025em] text-[var(--text-1)]">
             Resources
           </h1>
@@ -61,24 +64,27 @@ export default async function ResourcesPage() {
             Tools, documents, and links for partners.
           </p>
         </div>
-        <Link href="/admin/resources/new">
-          <Button size="sm">
-            <Plus className="h-3.5 w-3.5" />
-            Add Resource
-          </Button>
-        </Link>
+        {resources.length > 0 && (
+          <Link href="/admin/resources/new" className="shrink-0 max-sm:mt-1">
+            <Button size="sm" className="whitespace-nowrap max-sm:min-h-[48px] max-sm:w-full">
+              <Plus className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Add resource</span>
+              <span className="sm:hidden">Add</span>
+            </Button>
+          </Link>
+        )}
       </div>
 
       {resources.length === 0 ? (
-        <EmptyState
-          icon={<BookOpen className="h-6 w-6" />}
-          title="No resources"
-          description="Add guides, scripts, videos, and FAQs for Revenue Partners"
+        <EmptyContentCard
+          icon={<BookOpen className="h-7 w-7" />}
+          title="No resources yet"
+          body="Add guides, scripts, videos and FAQs for your partners."
           action={
             <Link href="/admin/resources/new">
-              <Button size="sm">
+              <Button size="sm" className="min-h-[44px]">
                 <Plus className="h-3.5 w-3.5" />
-                Add Resource
+                Add resource
               </Button>
             </Link>
           }
@@ -87,16 +93,12 @@ export default async function ResourcesPage() {
         <div className="space-y-8">
           {TYPE_ORDER.filter((type) => grouped.has(type)).map((type) => {
             const items = grouped.get(type) || [];
-            const meta = TYPE_META[type] || TYPE_META.document;
-            const Icon = meta.icon;
-
             return (
               <div key={type}>
                 {/* Type header */}
                 <div className="flex items-center gap-2.5 mb-3">
-                  <Icon className="h-4 w-4 text-[var(--text-3)]" />
                   <h2 className="text-[12px] font-semibold uppercase tracking-[0.05em] text-[var(--text-3)]">
-                    {meta.label}s
+                    {TYPE_LABELS[type] || type}
                   </h2>
                   <span className="text-[11px] text-[var(--text-3)] tabular-nums">
                     {items.length}
@@ -104,40 +106,18 @@ export default async function ResourcesPage() {
                   <div className="flex-1 h-px bg-[var(--border)]" />
                 </div>
 
-                {/* Resource list */}
-                <div className="surface">
-                  <div className="divide-y divide-[var(--border-subtle)]">
-                    {items.map((resource) => (
-                      <div
-                        key={resource.id as string}
-                        className="flex items-start justify-between gap-4 px-5 py-3.5 transition-colors duration-120 hover:bg-[var(--hover-bg)]"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="text-[13px] font-medium text-[var(--text-1)] leading-snug">
-                              {resource.title}
-                            </p>
-                            {!resource.is_active && (
-                              <Badge variant="warning">Inactive</Badge>
-                            )}
-                          </div>
-                          {resource.description && (
-                            <p className="mt-0.5 text-[12px] text-[var(--text-3)] line-clamp-1">
-                              {resource.description}
-                            </p>
-                          )}
-                          {resource.url && (
-                            <a
-                              href={resource.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="mt-1 inline-flex items-center gap-1 text-[12px] font-medium text-[var(--accent)] hover:text-[var(--accent-hover)] transition-colors duration-150"
-                            >
-                              Open link
-                              <ExternalLink className="h-3 w-3" />
-                            </a>
-                          )}
-                        </div>
+                {/* Resource cards */}
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  {items.map((resource) => (
+                    <ResourceCard
+                      key={resource.id as string}
+                      title={resource.title as string}
+                      description={resource.description as string}
+                      type={(resource.type || "document") as ResourceType}
+                      url={resource.url as string}
+                      activePill={resource.is_active ? "active" : "hidden"}
+                      sortOrder={resource.sort_order as number}
+                      actions={
                         <ResourceActions
                           id={resource.id as string}
                           title={resource.title as string}
@@ -147,9 +127,9 @@ export default async function ResourcesPage() {
                           sortOrder={resource.sort_order as number}
                           isActive={resource.is_active as boolean}
                         />
-                      </div>
-                    ))}
-                  </div>
+                      }
+                    />
+                  ))}
                 </div>
               </div>
             );

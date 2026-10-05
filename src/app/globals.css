@@ -1811,11 +1811,6 @@ body {
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Inner sidebar fills the panel exactly — same width, no white strip */
-  .mobile-sidebar .sidebar {
-    width: 100% !important;
-  }
-
   .mobile-sidebar.is-open {
     transform: translateX(0);
     visibility: visible;
@@ -1835,6 +1830,14 @@ body {
      Declared after .mobile-content-pad so it wins for the bottom edge. */
   .tabbar-clearance {
     padding-bottom: calc(104px + env(safe-area-inset-bottom));
+  }
+
+  /* ── Partner top offset (mobile only) ──
+     The floating hamburger is gone on partner mobile, so the 78px
+     reserved top space becomes 20px + safe area. Admin keeps its own
+     offset because its floating button is still there. */
+  .partner-top-pad {
+    padding-top: calc(20px + env(safe-area-inset-top, 0px));
   }
 
   /* ── Micro-interactions ── */

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormError } from "@/components/ui/form-error";
+import { PageHeader } from "@/components/ui/page-header";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { updateAnnouncementAction } from "../../actions";
@@ -50,7 +51,7 @@ export function EditAnnouncementForm({
   };
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-[720px]">
       <Link
         href="/admin/announcements"
         className="inline-flex items-center gap-1 text-[13px] text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors duration-150 mb-6"
@@ -59,23 +60,36 @@ export function EditAnnouncementForm({
         Back to Announcements
       </Link>
 
-      <h1 className="text-[28px] font-bold tracking-[-0.02em] text-[var(--text-1)] mb-6">
-        Edit Announcement
-      </h1>
+      <PageHeader
+        title="Edit Announcement"
+        description="Update this announcement for your partners."
+      />
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {error && <FormError message={error} />}
+      <form
+        onSubmit={handleSubmit}
+        className="mt-6 rounded-[18px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow-soft)] max-md:p-4 space-y-5"
+      >
+        {error && (
+          <div role="alert">
+            <FormError message={error} />
+          </div>
+        )}
 
-        <Input
-          label="Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-          maxLength={300}
-        />
+        <div>
+          <Input
+            label="Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+            maxLength={300}
+          />
+          <p className="mt-1 text-right text-[11px] tabular-nums text-[var(--text-3)]">
+            {title.length} / 300
+          </p>
+        </div>
 
         <div className="space-y-1.5">
-          <label className="block text-[12px] font-semibold text-[var(--text-2)]">
+          <label className="block text-[13px] font-medium text-[var(--text-2)]">
             Content
           </label>
           <textarea
@@ -83,26 +97,48 @@ export function EditAnnouncementForm({
             onChange={(e) => setContent(e.target.value)}
             required
             rows={6}
-            className="input-field min-h-[140px] text-[13px]"
+            className="input-field min-h-[160px] text-[13px]"
           />
         </div>
 
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={isPinned}
-            onChange={(e) => setIsPinned(e.target.checked)}
-            className="rounded border-[var(--border)] text-[var(--accent)] focus:ring-[var(--focus-ring)]"
-          />
-          <span className="text-[13px] text-[var(--text-2)]">Pinned</span>
-        </label>
+        <div className="space-y-1.5">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={isPinned}
+            aria-label="Pin this announcement"
+            onClick={() => setIsPinned((v) => !v)}
+            className="flex min-h-[44px] items-center gap-3"
+          >
+            <span
+              aria-hidden="true"
+              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-150 ${
+                isPinned ? "bg-[var(--accent)]" : "bg-[var(--border)]"
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-150 ${
+                  isPinned ? "translate-x-6" : "translate-x-1"
+                }`}
+              />
+            </span>
+            <span className="text-left">
+              <span className="block text-[13px] font-medium text-[var(--text-1)]">
+                Pin this announcement
+              </span>
+              <span className="block text-[12px] text-[var(--text-3)]">
+                Pinned announcements appear first for partners.
+              </span>
+            </span>
+          </button>
+        </div>
 
         <div className="flex items-center gap-3 pt-2">
-          <Button type="submit" loading={loading} className="flex-1">
-            Save Changes
+          <Button type="submit" loading={loading} className="flex-1 min-h-[44px]">
+            Save changes
           </Button>
           <Link href="/admin/announcements">
-            <Button type="button" variant="secondary">
+            <Button type="button" variant="secondary" className="min-h-[44px]">
               Cancel
             </Button>
           </Link>

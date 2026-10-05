@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { motion, LayoutGroup } from "motion/react";
@@ -26,6 +26,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   LogOut,
+  X,
 } from "lucide-react";
 
 const NAV_INDICATOR_ID = "admin-nav-indicator";
@@ -128,10 +129,12 @@ function DesktopSidebar({
   collapsed,
   onToggle,
   adminName,
+  variant = "default",
 }: {
   collapsed: boolean;
   onToggle: () => void;
   adminName: string;
+  variant?: "default" | "drawer";
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -150,7 +153,11 @@ function DesktopSidebar({
   return (
     <aside
       className={`sidebar flex flex-col h-full transition-[width] duration-200 ease-out ${
-        collapsed ? "w-[var(--sidebar-collapsed-width)]" : "w-[var(--sidebar-width)]"
+        variant === "drawer"
+          ? "w-full"
+          : collapsed
+            ? "w-[var(--sidebar-collapsed-width)]"
+            : "w-[var(--sidebar-width)]"
       }`}
     >
       {/* ── Brand ── */}
@@ -285,28 +292,58 @@ function MobileDrawer({
   adminName: string;
 }) {
   const [mounted, setMounted] = useState(false);
+  const fabRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // Escape closes; focus moves into the drawer on open and back to the
+  // hamburger on close. The prevOpenRef guard prevents stealing focus
+  // on first mount.
+  const prevOpenRef = useRef(false);
+  useEffect(() => {
+    if (!mounted) return;
+    if (open) {
+      prevOpenRef.current = true;
+      function handleKey(e: KeyboardEvent) {
+        if (e.key === "Escape") onClose();
+      }
+      document.addEventListener("keydown", handleKey);
+      const panel = document.getElementById("admin-mobile-menu");
+      const first = panel?.querySelector<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      first?.focus();
+      return () => document.removeEventListener("keydown", handleKey);
+    }
+    if (prevOpenRef.current) {
+      prevOpenRef.current = false;
+      fabRef.current?.focus();
+    }
+    return undefined;
+  }, [open, mounted, onClose]);
+
   if (!mounted) return null;
 
   return createPortal(
     <>
-      {/* ── FAB: hamburger ↔ X, never moves ── */}
-      <button
-        onClick={onToggle}
-        className={`mobile-fab md:hidden ${open ? "is-open" : ""}`}
-        aria-label={open ? "Close menu" : "Open menu"}
-        aria-expanded={open}
-      >
-        <div className="mobile-fab-icon">
-          <span />
-          <span />
-          <span />
-        </div>
-      </button>
+      {/* ── FAB: opens the menu; hidden while open (in-drawer X takes over) ── */}
+      {!open && (
+        <button
+          ref={fabRef}
+          onClick={onToggle}
+          className="mobile-fab md:hidden"
+          aria-label="Open menu"
+          aria-expanded={false}
+        >
+          <div className="mobile-fab-icon">
+            <span />
+            <span />
+            <span />
+          </div>
+        </button>
+      )}
 
       {/* ── Backdrop: fixed, blurred, fades in ── */}
       <div
@@ -352,13 +389,26 @@ function MobileDrawerPanel({
     (item.href !== "/admin" && pathname.startsWith(item.href));
 
   return (
-    <div className={`mobile-sidebar md:hidden ${open ? "is-open" : ""}`}>
-      <aside className="sidebar flex flex-col h-full w-[var(--sidebar-width)]">
-        {/* ── Brand ── */}
+    <div
+      id="admin-mobile-menu"
+      role="dialog"
+      aria-label="Menu"
+      className={`mobile-sidebar md:hidden ${open ? "is-open" : ""}`}
+    >
+      <aside className="sidebar flex flex-col h-full w-full">
+        {/* ── Brand + close ── */}
         <div className="flex items-center shrink-0 h-[56px] px-4">
           <Link href="/admin" className="flex items-center shrink-0" onClick={handleNavClick}>
             <Brand color="dark" size="sm" />
           </Link>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close menu"
+            className="ml-auto flex min-h-[44px] min-w-[44px] items-center justify-center rounded-[12px] text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)] transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-[-2px]"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
         {/* ── Navigation ── */}
