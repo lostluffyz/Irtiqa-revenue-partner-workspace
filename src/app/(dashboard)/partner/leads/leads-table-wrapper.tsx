@@ -7,29 +7,21 @@ import { EmptyState } from "@/components/ui/empty-state";
 import {
   Target,
   Phone,
+  PhoneCall,
   Mail,
   Eye,
   Search,
+  X,
   ChevronLeft,
   ChevronRight,
   MapPin,
+  Building2,
+  TrendingUp,
+  CalendarCheck,
 } from "lucide-react";
 import { StatusBadge } from "./lead-status-update";
 import { LeadDetailsDrawer } from "./lead-details-drawer";
 import type { Lead } from "@/types/database";
-
-// ============================================
-// Avatar Colors (soft tints)
-// ============================================
-
-const AVATAR_COLORS = [
-  "bg-[#EFF6FF] text-[#1A56DB]", // blue
-  "bg-[#ECFDF5] text-[#059669]", // green
-  "bg-[#FFFBEB] text-[#D97706]", // amber
-  "bg-[#F5F3FF] text-[#7C3AED]", // purple
-  "bg-[#FDF2F8] text-[#DB2777]", // pink
-  "bg-[#ECFEFF] text-[#0891B2]", // cyan
-];
 
 // ============================================
 // Helpers
@@ -68,28 +60,29 @@ interface LeadsTableWrapperProps {
 }
 
 // ============================================
-// StatChip
+// Summary Tiles (same page-loaded numbers)
 // ============================================
 
-function StatChip({
-  count,
+function SummaryTile({
+  icon,
+  value,
   label,
-  color,
 }: {
-  count: number;
+  icon: React.ReactNode;
+  value: number;
   label: string;
-  color: string;
 }) {
   return (
-    <div className="flex items-center gap-1.5">
-      <span
-        className="w-2 h-2 rounded-full shrink-0"
-        style={{ backgroundColor: color }}
-      />
-      <span className="text-[13px] font-semibold text-[var(--text-1)] tabular-nums">
-        {count}
-      </span>
-      <span className="text-[12px] text-[var(--text-3)]">{label}</span>
+    <div className="rounded-[var(--radius-soft-lg)] border border-[var(--border)] bg-[var(--surface)] p-3.5 shadow-[var(--shadow-soft)]">
+      <div className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-soft-md)] bg-[var(--hover-bg)] text-[var(--text-2)]">
+        {icon}
+      </div>
+      <p className="mt-2 text-[20px] font-bold leading-none tracking-[-0.01em] text-[var(--text-1)] tabular-nums">
+        {value}
+      </p>
+      <p className="mt-1 text-[12px] font-medium text-[var(--text-2)]">
+        {label}
+      </p>
     </div>
   );
 }
@@ -107,32 +100,18 @@ function LeadRow({
   isSelected: boolean;
   onSelect: () => void;
 }) {
-  const [isHovered, setIsHovered] = useState(false);
-
-  const avatarColor =
-    AVATAR_COLORS[lead.company_name.charCodeAt(0) % AVATAR_COLORS.length];
-
   return (
     <div
       className={`
-        group flex items-center gap-4 px-4 py-3.5
+        group grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3
+        rounded-[var(--radius-soft-lg)] border border-[var(--border)] bg-[var(--surface)]
+        p-4 shadow-[var(--shadow-soft)]
         cursor-pointer select-none
-        border-l-[3px]
-        ${
-          isSelected
-            ? "bg-[var(--accent-light)] border-l-[var(--accent)]"
-            : "border-l-transparent"
-        }
-        ${
-          isHovered && !isSelected
-            ? "bg-[var(--hover-bg)] -translate-y-px shadow-[var(--shadow-1)]"
-            : ""
-        }
+        transition-shadow duration-150 hover:shadow-[var(--shadow-lift)]
+        focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2
+        ${isSelected ? "ring-2 ring-[var(--accent)]/40 bg-[var(--accent-light)]/40" : ""}
       `}
-      style={{ transition: "background-color 150ms ease-out, box-shadow 150ms ease-out, border-color 150ms ease-out, transform 150ms ease-out" }}
       onClick={onSelect}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
@@ -141,100 +120,90 @@ function LeadRow({
           onSelect();
         }
       }}
+      aria-label={`View details for ${lead.company_name}`}
     >
-      {/* Avatar */}
-      <div
-        className={`w-9 h-9 rounded-[var(--radius-md)] flex items-center justify-center text-[14px] font-semibold shrink-0 ${avatarColor}`}
-      >
-        {lead.company_name.charAt(0).toUpperCase()}
+      {/* Avatar — neutral tile */}
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-soft-md)] bg-[var(--hover-bg)] text-[var(--text-2)]">
+        <Building2 className="h-5 w-5" />
       </div>
 
-      {/* Lead Info */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <h3 className="text-[14px] font-semibold text-[var(--text-1)] truncate line-clamp-1">
-            {lead.company_name}
-          </h3>
+      {/* Center: name, industry pill, meta */}
+      <div className="min-w-0">
+        <h3
+          className="text-[14px] font-semibold text-[var(--text-1)] leading-snug line-clamp-2 md:line-clamp-1 md:truncate"
+          title={lead.company_name}
+        >
+          {lead.company_name}
+        </h3>
+        <div className="mt-1 flex min-w-0 items-center gap-2">
           {lead.industry && (
-            <span className="text-[11px] text-[var(--text-3)] truncate line-clamp-1 hidden sm:inline">
+            <span className="max-w-[160px] truncate rounded-[var(--radius-soft-pill)] bg-[var(--hover-bg)] px-2 py-0.5 text-[11px] text-[var(--text-2)]">
               {lead.industry}
             </span>
           )}
         </div>
-        <div className="flex items-center gap-3 mt-0.5">
-          {lead.email && (
-            <span className="flex items-center gap-1 text-[12px] text-[var(--text-3)] truncate line-clamp-1 max-w-[200px]">
-              <Mail className="h-3 w-3 shrink-0" />
-              <span className="truncate">{lead.email}</span>
+        <div className="mt-1 flex min-w-0 items-center gap-3 text-[12px]">
+          {lead.phone ? (
+            <span className="flex min-w-0 items-center gap-1 text-[var(--text-2)] tabular-nums">
+              <Phone className="h-3 w-3 shrink-0 text-[var(--text-3)]" />
+              <span className="truncate">{lead.phone}</span>
             </span>
+          ) : (
+            <span className="text-[var(--text-3)]">No phone</span>
           )}
-          {lead.phone && (
-            <span className="flex items-center gap-1 text-[12px] text-[var(--text-3)] shrink-0">
-              <Phone className="h-3 w-3" />
-              {lead.phone}
+          {lead.country && (
+            <span className="flex min-w-0 items-center gap-1 text-[var(--text-2)]">
+              <MapPin className="h-3 w-3 shrink-0 text-[var(--text-3)]" />
+              <span className="truncate">{lead.country}</span>
             </span>
           )}
         </div>
-        {lead.country && (
-          <div className="flex items-center gap-1 mt-0.5">
-            <MapPin className="h-3 w-3 text-[var(--text-3)] shrink-0" />
-            <span className="text-[11px] text-[var(--text-3)] truncate line-clamp-1">
-              {lead.country}
-            </span>
-          </div>
-        )}
       </div>
 
-      {/* Status Badge */}
-      <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
-        <StatusBadge lead={lead} />
-      </div>
-
-      {/* Assigned Date */}
-      <div className="text-[11px] text-[var(--text-3)] tabular-nums w-16 text-right shrink-0 hidden sm:block">
-        {lead.assigned_at ? formatRelativeDate(lead.assigned_at) : "—"}
-      </div>
-
-      {/* Quick Actions (hover reveal) */}
-      <div
-        className={`
-          items-center gap-1 shrink-0
-          transition-opacity duration-150
-          ${isHovered ? "opacity-100" : "opacity-0"}
-          hidden sm:flex
-        `}
-      >
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onSelect();
-          }}
-          className="p-1.5 rounded-[var(--radius-sm)] hover:bg-[var(--border-subtle)] transition-colors duration-150 active:scale-95"
-          aria-label="View lead details"
+      {/* Right: fixed column — status, date, quick actions */}
+      <div className="flex w-[132px] shrink-0 flex-col items-end gap-1.5">
+        <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+          <StatusBadge lead={lead} />
+        </div>
+        <span
+          className="text-[11px] text-[var(--text-3)] tabular-nums"
+          title={lead.assigned_at || undefined}
         >
-          <Eye className="h-4 w-4 text-[var(--text-3)]" />
-        </button>
-        {lead.phone && (
-          <a
-            href={`tel:${lead.phone}`}
-            onClick={(e) => e.stopPropagation()}
-            className="p-1.5 rounded-[var(--radius-sm)] hover:bg-[var(--border-subtle)] transition-colors duration-150 active:scale-95"
-            aria-label="Call"
+          {lead.assigned_at ? formatRelativeDate(lead.assigned_at) : "—"}
+        </span>
+        <div className="flex items-center gap-0.5 transition-opacity duration-150 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect();
+            }}
+            className="flex min-h-[44px] min-w-[40px] items-center justify-center rounded-[var(--radius-soft-sm)] text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)] transition-colors duration-150 md:min-h-0 md:min-w-0 md:p-1.5"
+            aria-label="View lead details"
           >
-            <Phone className="h-4 w-4 text-[var(--text-3)]" />
-          </a>
-        )}
-        {lead.email && (
-          <a
-            href={`mailto:${lead.email}`}
-            onClick={(e) => e.stopPropagation()}
-            className="p-1.5 rounded-[var(--radius-sm)] hover:bg-[var(--border-subtle)] transition-colors duration-150 active:scale-95"
-            aria-label="Email"
-          >
-            <Mail className="h-4 w-4 text-[var(--text-3)]" />
-          </a>
-        )}
+            <Eye className="h-4 w-4" />
+          </button>
+          {lead.phone && (
+            <a
+              href={`tel:${lead.phone}`}
+              onClick={(e) => e.stopPropagation()}
+              className="flex min-h-[44px] min-w-[40px] items-center justify-center rounded-[var(--radius-soft-sm)] text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)] transition-colors duration-150 md:min-h-0 md:min-w-0 md:p-1.5"
+              aria-label={`Call ${lead.company_name}`}
+            >
+              <Phone className="h-4 w-4" />
+            </a>
+          )}
+          {lead.email && (
+            <a
+              href={`mailto:${lead.email}`}
+              onClick={(e) => e.stopPropagation()}
+              className="flex min-h-[44px] min-w-[40px] items-center justify-center rounded-[var(--radius-soft-sm)] text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)] transition-colors duration-150 md:min-h-0 md:min-w-0 md:p-1.5"
+              aria-label={`Email ${lead.company_name}`}
+            >
+              <Mail className="h-4 w-4" />
+            </a>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -276,9 +245,9 @@ export function LeadsTableWrapper({
     [searchValue, status, router],
   );
 
-  const handleStatusChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const newStatus = e.target.value;
+  // Same URL params as the previous select: ?search=&status= (omitted when "all")
+  const applyStatusFilter = useCallback(
+    (newStatus: string) => {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       if (newStatus && newStatus !== "all") params.set("status", newStatus);
@@ -291,6 +260,18 @@ export function LeadsTableWrapper({
     setSearchValue("");
     router.push("/partner/leads");
   }, [router]);
+
+  // Counts shown only where the page already loads them (stats prop).
+  const statusChips = [
+    { value: "all", label: "All", count: stats.total as number | undefined },
+    { value: "not_contacted", label: "Not Contacted", count: undefined as number | undefined },
+    { value: "contacted", label: "Contacted", count: stats.contacted as number | undefined },
+    { value: "follow_up_required", label: "Follow Up", count: stats.followUp as number | undefined },
+    { value: "appointment_booked", label: "Appt Booked", count: stats.appointments as number | undefined },
+    { value: "closed", label: "Closed", count: undefined as number | undefined },
+    { value: "not_interested", label: "Not Interested", count: undefined as number | undefined },
+    { value: "invalid_contact", label: "Invalid", count: undefined as number | undefined },
+  ];
 
   const hasFilters = Boolean(search || (status && status !== "all"));
 
@@ -318,22 +299,26 @@ export function LeadsTableWrapper({
         <p className="mt-1 text-[14px] text-[var(--text-3)]">
           Manage and track your assigned leads.
         </p>
-        <div className="flex items-center gap-5 mt-3 flex-wrap">
-          <StatChip count={stats.total} label="assigned" color="var(--accent)" />
-          <StatChip
-            count={stats.contacted}
-            label="contacted"
-            color="var(--status-info, #3B82F6)"
+        <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <SummaryTile
+            icon={<Target className="h-4 w-4" />}
+            value={stats.total}
+            label="Assigned"
           />
-          <StatChip
-            count={stats.followUp}
-            label="follow-up"
-            color="var(--status-warning, #F59E0B)"
+          <SummaryTile
+            icon={<PhoneCall className="h-4 w-4" />}
+            value={stats.contacted}
+            label="Contacted"
           />
-          <StatChip
-            count={stats.appointments}
-            label="appointments"
-            color="var(--status-success, #10B981)"
+          <SummaryTile
+            icon={<CalendarCheck className="h-4 w-4" />}
+            value={stats.followUp}
+            label="Follow-up"
+          />
+          <SummaryTile
+            icon={<TrendingUp className="h-4 w-4" />}
+            value={stats.appointments}
+            label="Appointments"
           />
         </div>
       </div>
@@ -347,34 +332,66 @@ export function LeadsTableWrapper({
               type="text"
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              placeholder="Search leads..."
-              className="w-full pl-9 pr-3 py-2 text-[13px] bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-md)] text-[var(--text-1)] placeholder:text-[var(--text-3)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-0 focus:border-[var(--accent)] transition-all duration-150"
+              placeholder="Search leads"
+              aria-label="Search leads"
+              className="w-full min-h-[44px] md:min-h-0 pl-9 pr-9 py-2 text-[13px] bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-soft-sm)] text-[var(--text-1)] placeholder:text-[var(--text-3)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-0 focus:border-[var(--accent)] transition-all duration-150"
             />
+            {searchValue && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchValue("");
+                  const params = new URLSearchParams();
+                  if (status && status !== "all") params.set("status", status);
+                  router.push(`/partner/leads?${params.toString()}`);
+                }}
+                aria-label="Clear search"
+                className="absolute right-2 top-1/2 -translate-y-1/2 flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 md:p-1 items-center justify-center rounded-[var(--radius-soft-xs)] text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors duration-150"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
-          <select
-            value={status || "all"}
-            onChange={handleStatusChange}
-            className="px-3 py-2 text-[13px] bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-md)] text-[var(--text-1)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-0 focus:border-[var(--accent)] transition-all duration-150 cursor-pointer"
-          >
-            <option value="all">All Statuses</option>
-            <option value="not_contacted">Not Contacted</option>
-            <option value="contacted">Contacted</option>
-            <option value="follow_up_required">Follow Up</option>
-            <option value="appointment_booked">Appt Booked</option>
-            <option value="closed">Closed</option>
-            <option value="not_interested">Not Interested</option>
-            <option value="invalid_contact">Invalid</option>
-          </select>
           {hasFilters && (
             <button
               type="button"
               onClick={handleClearFilters}
-              className="text-[12px] text-[var(--text-3)] hover:text-[var(--text-2)] transition-colors duration-150 whitespace-nowrap"
+              className="flex min-h-[44px] md:min-h-0 items-center gap-1 px-2.5 rounded-[var(--radius-soft-xs)] text-[12px] text-[var(--text-3)] hover:text-[var(--text-2)] transition-colors duration-150 whitespace-nowrap"
             >
               Clear
             </button>
           )}
         </form>
+        {/* Status chips — same values/params as the previous select */}
+        <div
+          className="chip-row-fade mt-3 flex min-w-0 items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1"
+          role="group"
+          aria-label="Filter by status"
+        >
+          {statusChips.map((opt) => {
+            const isActive = (status || "all") === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => applyStatusFilter(opt.value)}
+                aria-pressed={isActive}
+                className={`inline-flex h-[32px] min-h-[44px] md:min-h-0 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[var(--radius-soft-pill)] border px-3 text-[12px] font-medium tabular-nums transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2 ${
+                  isActive
+                    ? "border-transparent bg-[var(--text-1)] text-white"
+                    : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)]"
+                }`}
+              >
+                {opt.label}
+                {opt.count !== undefined && (
+                  <span className={isActive ? "text-white/70" : "text-[var(--text-3)]"}>
+                    ({opt.count})
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* ─── Lead List ─── */}
@@ -409,7 +426,7 @@ export function LeadsTableWrapper({
             />
           </div>
         ) : (
-          <div className="divide-y divide-[var(--border-subtle)]">
+          <div className="space-y-3">
             {leads.map((lead) => (
               <LeadRow
                 key={lead.id}
@@ -424,37 +441,39 @@ export function LeadsTableWrapper({
 
       {/* ─── Pagination ─── */}
       {total > 0 && (
-        <div className="flex items-center justify-between pt-2">
+        <div className="sticky bottom-0 z-10 flex flex-col items-center gap-2 border-t border-[var(--border-subtle)] bg-[var(--canvas)]/95 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur md:flex-row md:justify-between">
           <span className="text-[12px] text-[var(--text-3)] tabular-nums">
             {totalPages > 1
               ? `Showing ${startIdx}–${endIdx} of ${total} leads`
               : `${total} lead${total === 1 ? "" : "s"}`}
           </span>
-          <div className="flex items-center gap-1">
-            {page > 1 && (
-              <a href={buildPageUrl(page - 1)}>
-                <Button variant="ghost" size="sm">
-                  <ChevronLeft className="h-3.5 w-3.5" />
-                  Previous
-                </Button>
-              </a>
-            )}
-            {page < totalPages && (
-              <a href={buildPageUrl(page + 1)}>
-                <Button variant="ghost" size="sm">
-                  Next
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </Button>
-              </a>
-            )}
-            {totalPages > 1 && (
-              <span className="text-[12px] text-[var(--text-2)] tabular-nums ml-2 hidden sm:inline">
+          {totalPages > 1 && (
+            <div className="inline-flex items-center gap-1 rounded-[var(--radius-soft-pill)] border border-[var(--border)] bg-[var(--surface)] px-2 py-1 shadow-[var(--shadow-soft)]">
+              {page > 1 && (
+                <a href={buildPageUrl(page - 1)}>
+                  <Button variant="ghost" size="sm" className="min-h-[44px] md:min-h-0">
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                    Previous
+                  </Button>
+                </a>
+              )}
+              <span className="px-2 text-[12px] text-[var(--text-2)] tabular-nums whitespace-nowrap">
                 Page {page} of {totalPages}
               </span>
-            )}
-          </div>
+              {page < totalPages && (
+                <a href={buildPageUrl(page + 1)}>
+                  <Button variant="ghost" size="sm" className="min-h-[44px] md:min-h-0">
+                    Next
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </Button>
+                </a>
+              )}
+            </div>
+          )}
         </div>
       )}
+      {/* Clearance so the sticky bar never covers the last card */}
+      <div aria-hidden="true" className="h-3" />
 
       {/* ─── Lead Details Drawer ─── */}
       <LeadDetailsDrawer

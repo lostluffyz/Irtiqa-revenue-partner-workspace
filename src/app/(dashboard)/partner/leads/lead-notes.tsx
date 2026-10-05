@@ -69,16 +69,19 @@ export function LeadNotes({ leadId, initialNotes }: LeadNotesProps) {
       <textarea
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
-        placeholder="Private notes about this lead..."
+        placeholder="Write private notes about this lead..."
         rows={4}
-        className="w-full px-3 py-2 text-[12px] leading-relaxed min-h-[88px]
-          bg-[var(--canvas)] border border-[var(--border)] rounded-[var(--radius-md)]
-          text-[var(--text-1)] placeholder:text-[var(--text-3)] placeholder:italic
+        className="w-full px-3 py-2 text-[12px] leading-relaxed min-h-[120px]
+          bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-soft-md)]
+          text-[var(--text-1)] placeholder:text-[var(--text-3)]
           resize-none
           transition-all duration-150
           hover:border-[var(--accent)]
           focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-0 focus:border-[var(--accent)]"
       />
+      <p className="text-[11px] text-[var(--text-3)]">
+        Only visible to you and your admin.
+      </p>
       <div className="flex items-center justify-end h-4">
         <span
           className={`inline-flex items-center gap-1 text-[10px] tabular-nums transition-all duration-200 ${
