@@ -47,16 +47,16 @@ export function DesktopPartnerDashboard({ pageData }: { pageData: PartnerPageDat
       {/* ─── KPI Stat Cards ─── */}
       <DashboardEntrance delay={50} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <DesktopStatCard
-          icon={<Target className="h-5 w-5 text-[#1A56DB]" />}
-          iconBg="bg-[#EFF6FF]"
+          icon={<Target className="h-5 w-5 text-[var(--text-2)]" />}
+          iconBg="bg-[var(--hover-bg)]"
           value={data.totalLeads}
           label="Total Leads"
           helper={data.totalLeads > 0 ? `${data.totalLeads} assigned` : "No leads yet"}
           href="/partner/leads"
         />
         <DesktopStatCard
-          icon={<FileText className="h-5 w-5 text-[#1A56DB]" />}
-          iconBg="bg-[#EFF6FF]"
+          icon={<FileText className="h-5 w-5 text-[var(--text-2)]" />}
+          iconBg="bg-[var(--hover-bg)]"
           value={data.totalLeadsContacted}
           label="Leads Contacted"
           helper={
@@ -66,15 +66,15 @@ export function DesktopPartnerDashboard({ pageData }: { pageData: PartnerPageDat
           }
         />
         <DesktopStatCard
-          icon={<CalendarCheck className="h-5 w-5 text-[#D97706]" />}
-          iconBg="bg-[#FFFBEB]"
+          icon={<CalendarCheck className="h-5 w-5 text-[var(--text-2)]" />}
+          iconBg="bg-[var(--hover-bg)]"
           value={data.totalAppointments}
           label="Appointments"
           helper={data.totalAppointments > 0 ? "Booked" : "None yet"}
         />
         <DesktopStatCard
-          icon={<TrendingUp className="h-5 w-5 text-[#059669]" />}
-          iconBg="bg-[#ECFDF5]"
+          icon={<TrendingUp className="h-5 w-5 text-[var(--text-2)]" />}
+          iconBg="bg-[var(--hover-bg)]"
           value={data.totalDeals}
           label="Deals Closed"
           helper={data.totalDeals > 0 ? "Closed deals" : "No deals yet"}
@@ -104,19 +104,13 @@ export function DesktopPartnerDashboard({ pageData }: { pageData: PartnerPageDat
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[14px] font-semibold text-[var(--text-1)]">Daily Report Required</p>
-            <div className="mt-0.5 text-[12px]">
-              <p className="text-[var(--text-3)]">Submit before</p>
-              {complianceStatus.deadline_hour !== undefined && complianceStatus.deadline_minute !== undefined && (
-                <>
-                  <p className="text-[var(--text-1)] font-medium tabular-nums">
-                    {formatDeadlineTime(complianceStatus.deadline_hour, complianceStatus.deadline_minute)} UTC
-                  </p>
-                  <p className="text-[var(--text-3)]">
-                    ({formatDeadlineInTimezone(complianceStatus.deadline_hour, complianceStatus.deadline_minute, PROGRAM_TIMEZONE)} local)
-                  </p>
-                </>
-              )}
-            </div>
+            {complianceStatus.deadline_hour !== undefined && complianceStatus.deadline_minute !== undefined && (
+              <p className="mt-0.5 text-[12px] text-[var(--text-3)] tabular-nums">
+                Due {formatDeadlineTime(complianceStatus.deadline_hour, complianceStatus.deadline_minute)} UTC ·{" "}
+                {formatDeadlineInTimezone(complianceStatus.deadline_hour, complianceStatus.deadline_minute, PROGRAM_TIMEZONE)}{" "}
+                your time
+              </p>
+            )}
           </div>
           <Link href="/partner/report" className="shrink-0">
             <Button variant="primary" size="sm">
@@ -166,27 +160,39 @@ export function DesktopPartnerDashboard({ pageData }: { pageData: PartnerPageDat
           </div>
         </div>
 
-        <div className="relative mb-1.5">
-          <div className="flex justify-between text-[10px] text-[var(--text-3)] tabular-nums px-0.5">
-            <span>Day 1</span>
-            <span>Day 10</span>
-            <span>Day 20</span>
-            <span>Day 30</span>
-          </div>
+        <div className="relative mb-1.5 h-3 text-[10px] text-[var(--text-3)] tabular-nums px-0.5" aria-hidden="true">
+          <span className="absolute left-0.5">Day 1</span>
+          <span className="absolute -translate-x-1/2" style={{ left: "33.33%" }}>Day 10</span>
+          <span className="absolute -translate-x-1/2" style={{ left: "66.67%" }}>Day 20</span>
+          <span className="absolute right-0.5">Day 30</span>
         </div>
 
-        <div className="relative h-2 w-full rounded-full bg-[var(--border-subtle)]">
+        <div
+          className="relative h-2 w-full rounded-full bg-[var(--border-subtle)]"
+          role="progressbar"
+          aria-valuenow={data.programDay}
+          aria-valuemin={0}
+          aria-valuemax={30}
+          aria-label={`Program progress: day ${data.programDay} of 30`}
+        >
           <div
-            className="dashboard-progress-fill h-2 rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--status-success)]"
+            className="h-2 rounded-full bg-[var(--accent)] transition-[width] duration-300"
             style={{ width: `${progressPct}%` }}
           />
           <div
-            className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full border-2 border-white"
-            style={{ left: `${(10 / 30) * 100}%`, backgroundColor: data.programDay >= 10 ? "var(--accent)" : "var(--border)" }}
+            className="absolute top-1/2 h-2.5 w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--text-3)]"
+            style={{ left: `${(10 / 30) * 100}%` }}
+            aria-hidden="true"
           />
           <div
-            className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full border-2 border-white"
-            style={{ left: `${(20 / 30) * 100}%`, backgroundColor: data.programDay >= 20 ? "var(--accent)" : "var(--border)" }}
+            className="absolute top-1/2 h-2.5 w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--text-3)]"
+            style={{ left: `${(20 / 30) * 100}%` }}
+            aria-hidden="true"
+          />
+          <div
+            className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[var(--accent)]"
+            style={{ left: `${Math.min(100, (data.programDay / 30) * 100)}%` }}
+            title={`Today: Day ${data.programDay}`}
           />
         </div>
       </DashboardEntrance>
@@ -214,62 +220,42 @@ export function DesktopPartnerDashboard({ pageData }: { pageData: PartnerPageDat
             <p className="text-[13px] text-[var(--text-3)]">No leads assigned yet</p>
           </div>
         ) : (
-          <>
-            <div className="h-2.5 w-full rounded-full bg-[var(--border-subtle)] flex overflow-hidden mb-5">
-              {PIPELINE_STATUSES.map((status) => {
-                const count = status === "not_contacted"
-                  ? Math.max(0, data.totalLeads - data.totalLeadsContacted)
-                  : status === "contacted"
-                    ? Math.max(0, data.totalLeadsContacted - data.totalAppointments)
-                    : status === "appointment_booked"
-                      ? data.totalAppointments
-                      : status === "closed"
-                        ? data.totalDeals
-                        : 0;
-                const pct = data.totalLeads > 0 ? (count / data.totalLeads) * 100 : 0;
-                if (pct <= 0) return null;
-                return (
-                  <div
-                    key={status}
-                    className="h-full transition-all duration-500"
-                    style={{ width: `${pct}%`, backgroundColor: PIPELINE_COLORS[status] }}
-                    title={`${PIPELINE_LABELS[status]}: ${count}`}
-                  />
-                );
-              })}
-            </div>
-
-            <div className="space-y-3">
-              {PIPELINE_STATUSES.map((status) => {
-                const count = status === "not_contacted"
-                  ? Math.max(0, data.totalLeads - data.totalLeadsContacted)
-                  : status === "contacted"
-                    ? Math.max(0, data.totalLeadsContacted - data.totalAppointments)
-                    : status === "appointment_booked"
-                      ? data.totalAppointments
-                      : status === "closed"
-                        ? data.totalDeals
-                        : 0;
-                const pct = data.totalLeads > 0 ? (count / data.totalLeads) * 100 : 0;
-                return (
-                  <div key={status} className="flex items-center gap-3">
-                    <div className="text-[12px] text-[var(--text-2)] w-28 shrink-0">
-                      {PIPELINE_LABELS[status]}
-                    </div>
-                    <div className="flex-1 h-1.5 rounded-full bg-[var(--border-subtle)] overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{ width: `${pct}%`, backgroundColor: PIPELINE_COLORS[status] }}
-                      />
-                    </div>
-                    <span className="text-[12px] font-medium text-[var(--text-1)] tabular-nums w-8 text-right">
-                      {count}
-                    </span>
+          <div className="space-y-1">
+            {PIPELINE_STATUSES.map((status) => {
+              const count = status === "not_contacted"
+                ? Math.max(0, data.totalLeads - data.totalLeadsContacted)
+                : status === "contacted"
+                  ? Math.max(0, data.totalLeadsContacted - data.totalAppointments)
+                  : status === "appointment_booked"
+                    ? data.totalAppointments
+                    : status === "closed"
+                      ? data.totalDeals
+                      : 0;
+              const pct = data.totalLeads > 0 ? (count / data.totalLeads) * 100 : 0;
+              const isZero = count === 0;
+              return (
+                <Link
+                  key={status}
+                  href={`/partner/leads?status=${status}`}
+                  aria-label={`${PIPELINE_LABELS[status]}: ${count} leads. View in My Leads.`}
+                  className={`group flex min-h-[44px] items-center gap-3 rounded-[8px] px-2 -mx-2 py-1.5 transition-colors duration-150 hover:bg-[var(--hover-bg)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-[-2px] md:min-h-0 ${isZero ? "opacity-60" : ""}`}
+                >
+                  <div className="text-[12px] text-[var(--text-2)] w-28 shrink-0 group-hover:text-[var(--text-1)]">
+                    {PIPELINE_LABELS[status]}
                   </div>
-                );
-              })}
-            </div>
-          </>
+                  <div className="flex-1 h-1.5 rounded-full bg-[var(--border-subtle)] overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-[width] duration-300"
+                      style={{ width: `${pct}%`, backgroundColor: PIPELINE_COLORS[status] }}
+                    />
+                  </div>
+                  <span className={`text-[12px] font-medium tabular-nums w-8 text-right ${isZero ? "text-[var(--text-3)]" : "text-[var(--text-1)]"}`}>
+                    {count}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
         )}
       </DashboardEntrance>
 
@@ -289,7 +275,7 @@ export function DesktopPartnerDashboard({ pageData }: { pageData: PartnerPageDat
           </div>
 
           {data.announcements.length === 0 ? (
-            <div className="px-5 py-12 text-center">
+            <div className="px-5 py-8 text-center">
               <Megaphone className="h-6 w-6 mx-auto text-[var(--text-3)] opacity-40 mb-2" />
               <p className="text-[13px] text-[var(--text-3)]">No announcements yet</p>
             </div>
@@ -324,18 +310,28 @@ export function DesktopPartnerDashboard({ pageData }: { pageData: PartnerPageDat
           </div>
 
           <div className="px-5 py-4 space-y-4">
-            <DesktopActivityItem color="var(--accent)" text={`Day ${data.programDay} of program`} time="Today" />
             {data.todayReport && (
               <DesktopActivityItem color="var(--status-success)" text="Daily report submitted" time={getRelativeTimePartner(data.todayReport.created_at)} />
-            )}
-            {data.totalReports > 0 && (
-              <DesktopActivityItem color="#1A56DB" text={`${data.totalReports} reports submitted`} time="All time" />
             )}
             {data.announcements.slice(0, 2).map((a) => (
               <DesktopActivityItem key={a.id} color={a.is_pinned ? "var(--accent)" : "var(--text-3)"} text={`New announcement: ${a.title}`} time={getRelativeTimePartner(a.created_at)} />
             ))}
-            {data.totalLeads > 0 && (
-              <DesktopActivityItem color="#059669" text={`${data.totalLeads} leads assigned to you`} time="All time" />
+            {!data.todayReport && data.announcements.length === 0 && (
+              <>
+                <DesktopActivityItem color="var(--accent)" text={`Day ${data.programDay} of 30`} time="Today" />
+                <DesktopActivityItem
+                  color={complianceStatus.status === "overdue" ? "var(--status-danger)" : "var(--status-warning)"}
+                  text={
+                    complianceStatus.status === "overdue"
+                      ? "Today's report is overdue"
+                      : "No report submitted yet today"
+                  }
+                  time="Today"
+                />
+                {data.totalLeads > 0 && (
+                  <DesktopActivityItem color="var(--text-3)" text={`${data.totalLeads} leads assigned`} time="All time" />
+                )}
+              </>
             )}
           </div>
         </div>
@@ -364,7 +360,7 @@ function DesktopStatCard({
   href?: string;
 }) {
   const content = (
-    <div className="surface p-4 h-full hover:shadow-[var(--shadow-2)] hover:border-[#D1D5DB] transition-all duration-150">
+    <div className={`surface p-4 h-full transition-all duration-150 ${href ? "hover:shadow-[var(--shadow-2)] hover:border-[#D1D5DB]" : ""}`}>
       <div className={`flex h-10 w-10 items-center justify-center rounded-[10px] ${iconBg} mb-3`}>
         {icon}
       </div>

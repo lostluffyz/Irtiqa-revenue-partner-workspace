@@ -47,8 +47,15 @@ export function MobilePipeline({ totalLeads, totalLeadsContacted, totalAppointme
                     ? totalDeals
                     : 0;
             const pct = totalLeads > 0 ? (count / totalLeads) * 100 : 0;
+            const isZero = count === 0;
             return (
-              <div key={status} className="mobile-pipeline-row">
+              <Link
+                key={status}
+                href={`/partner/leads?status=${status}`}
+                aria-label={`${PIPELINE_LABELS[status]}: ${count} leads. View in My Leads.`}
+                className="mobile-pipeline-row min-h-[44px] focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-[-2px]"
+                style={isZero ? { opacity: 0.6 } : undefined}
+              >
                 <div className="mobile-pipeline-label">
                   <span className="mobile-pipeline-dot" style={{ backgroundColor: PIPELINE_COLORS[status] }} />
                   {PIPELINE_LABELS[status]}
@@ -60,7 +67,7 @@ export function MobilePipeline({ totalLeads, totalLeadsContacted, totalAppointme
                   />
                 </div>
                 <span className="mobile-pipeline-value">{count}</span>
-              </div>
+              </Link>
             );
           })}
         </div>

@@ -26,21 +26,21 @@ export function MobilePartnerDashboard({ pageData }: { pageData: PartnerPageData
       </DashboardEntrance>
 
       <DashboardEntrance delay={50}>
-        <MobileStatCards
-          totalLeads={data.totalLeads}
-          totalLeadsContacted={data.totalLeadsContacted}
-          totalAppointments={data.totalAppointments}
-          totalDeals={data.totalDeals}
-        />
-      </DashboardEntrance>
-
-      <DashboardEntrance delay={100}>
         <MobileCompliance
           status={complianceStatus.status}
           deadlineHour={complianceStatus.deadline_hour}
           deadlineMinute={complianceStatus.deadline_minute}
           overdueDuration={complianceStatus.overdue_duration}
           todayReport={data.todayReport}
+        />
+      </DashboardEntrance>
+
+      <DashboardEntrance delay={100}>
+        <MobileStatCards
+          totalLeads={data.totalLeads}
+          totalLeadsContacted={data.totalLeadsContacted}
+          totalAppointments={data.totalAppointments}
+          totalDeals={data.totalDeals}
         />
       </DashboardEntrance>
 

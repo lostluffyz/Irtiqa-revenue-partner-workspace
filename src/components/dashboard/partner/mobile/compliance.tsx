@@ -45,19 +45,12 @@ export function MobileCompliance({ status, deadlineHour, deadlineMinute, overdue
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[15px] font-semibold text-[var(--text-1)]">Daily Report Required</p>
-          <div className="mt-1 text-[13px]">
-            <p className="text-[var(--text-3)]">Submit before</p>
-            {deadlineHour !== undefined && deadlineMinute !== undefined && (
-              <>
-                <p className="text-[var(--text-1)] font-medium tabular-nums">
-                  {formatDeadlineTime(deadlineHour, deadlineMinute)} UTC
-                </p>
-                <p className="text-[var(--text-3)]">
-                  ({formatDeadlineInTimezone(deadlineHour, deadlineMinute, PROGRAM_TIMEZONE)} local)
-                </p>
-              </>
-            )}
-          </div>
+          {deadlineHour !== undefined && deadlineMinute !== undefined && (
+            <p className="mt-1 text-[13px] text-[var(--text-3)] tabular-nums">
+              Due {formatDeadlineTime(deadlineHour, deadlineMinute)} UTC ·{" "}
+              {formatDeadlineInTimezone(deadlineHour, deadlineMinute, PROGRAM_TIMEZONE)} your time
+            </p>
+          )}
         </div>
         <Link href="/partner/report" className="shrink-0 mt-3 md:mt-0">
           <Button variant="primary" size="sm" className="min-h-[48px] px-5">

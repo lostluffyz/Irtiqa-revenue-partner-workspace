@@ -185,10 +185,12 @@ export function getRelativeTimePartner(dateStr: string): string {
    ═══════════════════════════════════════════════════════════════ */
 
 export const PIPELINE_COLORS: Record<string, string> = {
+  // Disciplined mapping: neutral / accent / success only.
+  // Used by the partner dashboard pipelines (desktop + mobile).
   not_contacted: "#9CA3AF",
   contacted: "#1A56DB",
   follow_up_required: "#D97706",
-  appointment_booked: "#059669",
+  appointment_booked: "#047857",
   closed: "#047857",
   not_interested: "#DC2626",
   invalid_contact: "#DC2626",

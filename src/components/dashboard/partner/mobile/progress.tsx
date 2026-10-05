@@ -27,7 +27,14 @@ export function MobileProgress({ programDay, daysRemaining, progressPct }: Progr
       </div>
 
       <div className="mobile-section-body">
-        <div className="mobile-progress-bar-container">
+        <div
+          className="mobile-progress-bar-container"
+          role="progressbar"
+          aria-valuenow={programDay}
+          aria-valuemin={0}
+          aria-valuemax={30}
+          aria-label={`Program progress: day ${programDay} of 30`}
+        >
           <div
             className="mobile-progress-bar-fill"
             style={{ width: `${progressPct}%` }}

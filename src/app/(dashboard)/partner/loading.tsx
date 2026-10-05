@@ -1,10 +1,10 @@
-import { Skeleton, SkeletonText, SkeletonTable } from "@/components/ui/skeleton";
+import { Skeleton, SkeletonText } from "@/components/ui/skeleton";
 
 /**
  * Partner segment loading UI.
  *
- * Rendered by Next.js as the Suspense fallback during client-side
- * navigation to ANY /partner route. Lives inside the SAME shared page
+ * Mirrors the partner dashboard layout (hero, report banner, KPI row,
+ * progress, pipeline, two-column sections) inside the SAME shared page
  * container as real pages, so there is no layout jump when content loads.
  */
 export default function PartnerLoading() {
@@ -16,11 +16,24 @@ export default function PartnerLoading() {
         <SkeletonText lines={1} className="max-w-md" />
       </div>
 
-      {/* Cards row */}
+      {/* Report banner */}
+      <div className="dl-surface flex items-center gap-4 p-5">
+        <Skeleton className="h-10 w-10 shrink-0 rounded-[10px]" />
+        <div className="flex-1 space-y-2">
+          <Skeleton className="h-4 rounded-[var(--radius-sm)]" style={{ width: "180px" }} />
+          <SkeletonText lines={1} className="max-w-xs" />
+        </div>
+        <Skeleton className="h-[32px] w-[110px] shrink-0 rounded-[8px]" />
+      </div>
+
+      {/* KPI row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="dl-surface p-4">
-            <Skeleton className="h-7 w-16 rounded-[var(--radius-sm)]" />
+            <Skeleton className="h-10 w-10 rounded-[10px]" />
+            <div className="mt-3">
+              <Skeleton className="h-6 w-16 rounded-[var(--radius-sm)]" />
+            </div>
             <div className="mt-2">
               <SkeletonText lines={1} />
             </div>
@@ -28,8 +41,31 @@ export default function PartnerLoading() {
         ))}
       </div>
 
-      {/* Content */}
-      <SkeletonTable rows={5} cols={3} />
+      {/* Progress + pipeline */}
+      <div className="dl-surface p-5">
+        <Skeleton className="h-7 rounded-[var(--radius-sm)]" style={{ width: "120px" }} />
+        <div className="mt-4">
+          <Skeleton className="h-2 rounded-full" />
+        </div>
+      </div>
+      <div className="dl-surface p-5">
+        <Skeleton className="h-5 rounded-[var(--radius-sm)]" style={{ width: "140px" }} />
+        <div className="mt-4 space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-3 rounded-full" />
+          ))}
+        </div>
+      </div>
+
+      {/* Two-column sections */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <div className="dl-surface p-5 lg:col-span-3">
+          <SkeletonText lines={3} />
+        </div>
+        <div className="dl-surface p-5 lg:col-span-2">
+          <SkeletonText lines={3} />
+        </div>
+      </div>
     </div>
   );
 }
