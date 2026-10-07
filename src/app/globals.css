@@ -63,6 +63,12 @@
   --sidebar-width: 240px;
   --sidebar-collapsed-width: 64px;
 
+  /* Floating admin sidebar + topbar (additive; existing sidebar tokens untouched) */
+  --sb-w-expanded: 252px;
+  --sb-w-collapsed: 72px;
+  --accent-tint: #E8EEFB;
+  --shadow-float: 0 1px 2px rgba(16,24,40,0.04), 0 8px 30px rgba(16,24,40,0.06);
+
   /* ══════════════════════════════════════════════════════════════
      Design Language — Foundation Tokens
      ══════════════════════════════════════════════════════════════ */
@@ -163,6 +169,31 @@ body {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Floating admin topbar
+   ══════════════════════════════════════════════════════════════ */
+.app-topbar {
+  background: var(--surface);
+}
+@supports (background: color-mix(in srgb, red 50%, blue)) {
+  .app-topbar {
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Admin sidebar nav — thin scrollbar + rail tooltip
+   ══════════════════════════════════════════════════════════════ */
+.app-nav-scroll {
+  scrollbar-width: thin;
+}
+
+.app-tip {
+  transition: opacity 150ms ease;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -1679,6 +1710,8 @@ body {
   .login-loading-overlay { animation: none !important; }
   .route-progress-container { animation: none !important; }
   .route-progress-bar { transition: none !important; }
+  .app-sidebar, .app-sidebar * { transition: none !important; }
+  .app-tip { animation: none !important; }
   .pulse-dot { animation: none !important; }
   .btn-hover-lift { transition: none !important; }
   .btn-hover-lift:hover:not(:disabled) { transform: none !important; }

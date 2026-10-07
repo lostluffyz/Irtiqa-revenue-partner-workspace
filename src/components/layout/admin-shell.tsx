@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useCallback, useRef } from "react";
+import type { CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
-import { motion, LayoutGroup } from "motion/react";
 import { createClient } from "@/lib/supabase/client";
 import { hideLoading } from "@/lib/loading-manager";
 import { PageTransition } from "@/components/ui/page-transition";
@@ -13,264 +13,16 @@ import { Avatar } from "@/components/ui/avatar";
 import { Brand } from "@/components/ui/brand";
 import { SafeLiveClock } from "@/components/ui/safe-live-clock";
 import { getBreadcrumbSegments } from "@/components/dashboard/helpers";
+import { AppSidebar, ADMIN_NAV_GROUPS, adminRoleLabel } from "./app-sidebar";
 import {
-  LayoutDashboard,
-  Users,
-  Target,
-  FileText,
-  Activity,
-  Megaphone,
-  BookOpen,
-  CalendarCheck,
-  Globe,
-  PanelLeftClose,
-  PanelLeftOpen,
-  LogOut,
+  ChevronRight,
+  Clock,
   X,
 } from "lucide-react";
 
-const NAV_INDICATOR_ID = "admin-nav-indicator";
-
-interface NavItem {
-  href: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-}
-
-const NAV = {
-  overview: [
-    { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  ],
-  manage: [
-    { href: "/admin/partners", label: "Partners", icon: Users },
-    { href: "/admin/leads", label: "Leads", icon: Target },
-  ],
-  operate: [
-    { href: "/admin/allocation", label: "Allocation", icon: CalendarCheck },
-    { href: "/admin/scrape", label: "Lead Scraper", icon: Globe },
-    { href: "/admin/reports", label: "Reports", icon: FileText },
-    { href: "/admin/activity", label: "Activity", icon: Activity },
-  ],
-  communicate: [
-    { href: "/admin/announcements", label: "Announcements", icon: Megaphone },
-    { href: "/admin/resources", label: "Resources", icon: BookOpen },
-  ],
-};
-
-const SECTION_TITLES: Record<string, string> = {
-  manage: "Manage",
-  operate: "Operate",
-  communicate: "Communicate",
-};
-
 /* ══════════════════════════════════════════════════════════════
-   NavLink — shared by desktop sidebar and mobile drawer
+   DesktopSidebar lives in ./app-sidebar (floating AppSidebar).
    ══════════════════════════════════════════════════════════════ */
-
-function NavLink({
-  item,
-  active,
-  collapsed,
-  layoutId,
-}: {
-  item: NavItem;
-  active: boolean;
-  collapsed: boolean;
-  layoutId: string;
-}) {
-  return (
-    <Link
-      href={item.href}
-      aria-current={active ? "page" : undefined}
-      aria-label={item.label}
-      className={`relative flex items-center text-[13px] transition-colors duration-150 rounded-[8px] mb-0.5 focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-[-2px] ${
-        collapsed
-          ? "justify-center h-[36px]"
-          : "gap-2.5 px-3 py-[7px]"
-      } ${
-        active
-          ? "font-medium text-[var(--text-1)]"
-          : "text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)]"
-      }`}
-      title={collapsed ? item.label : undefined}
-    >
-      {active && (
-        <motion.div
-          layoutId={layoutId}
-          className="absolute inset-0 bg-[var(--hover-bg)] rounded-[8px]"
-          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-        />
-      )}
-      {active && (
-        <span
-          aria-hidden="true"
-          className="absolute left-[3px] top-[7px] bottom-[7px] z-10 w-[3px] rounded-full bg-[var(--accent)]"
-        />
-      )}
-      <item.icon
-        className={`relative z-10 h-[18px] w-[18px] shrink-0 ${
-          active ? "text-[var(--accent)]" : "text-[var(--text-3)]"
-        }`}
-      />
-      {!collapsed && (
-        <span className="relative z-10 label-collapse whitespace-nowrap">
-          {item.label}
-        </span>
-      )}
-    </Link>
-  );
-}
-
-/* ══════════════════════════════════════════════════════════════
-   DesktopSidebar — desktop only, never rendered on mobile
-   ══════════════════════════════════════════════════════════════ */
-
-function DesktopSidebar({
-  collapsed,
-  onToggle,
-  adminName,
-  variant = "default",
-}: {
-  collapsed: boolean;
-  onToggle: () => void;
-  adminName: string;
-  variant?: "default" | "drawer";
-}) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const supabase = createClient();
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
-  };
-
-  const isActive = (item: NavItem) =>
-    pathname === item.href ||
-    (item.href !== "/admin" && pathname.startsWith(item.href));
-
-  return (
-    <aside
-      className={`sidebar flex flex-col h-full transition-[width] duration-200 ease-out ${
-        variant === "drawer"
-          ? "w-full"
-          : collapsed
-            ? "w-[var(--sidebar-collapsed-width)]"
-            : "w-[var(--sidebar-width)]"
-      }`}
-    >
-      {/* ── Brand ── */}
-      <div
-        className={`flex items-center shrink-0 h-[56px] transition-all duration-200 ${
-          collapsed ? "justify-center px-0" : "px-4"
-        }`}
-      >
-        <Link
-          href="/admin"
-          className={`flex items-center shrink-0 ${collapsed ? "justify-center" : ""}`}
-        >
-          {!collapsed && <Brand color="dark" size="sm" className="label-collapse" />}
-        </Link>
-
-        {!collapsed && (
-          <button
-            onClick={onToggle}
-            className="ml-auto p-1.5 rounded-[6px] text-[var(--text-3)] hover:text-[var(--text-2)] hover:bg-[var(--hover-bg)] transition-colors duration-150"
-            title="Collapse sidebar"
-          >
-            <PanelLeftClose className="h-4 w-4" />
-          </button>
-        )}
-        {collapsed && (
-          <button
-            onClick={onToggle}
-            className="hidden md:flex absolute top-3 -right-3 items-center justify-center w-[22px] h-[22px] rounded-full bg-[var(--surface)] border border-[var(--border)] text-[var(--text-3)] hover:text-[var(--text-2)] hover:border-[#D1D5DB] transition-colors duration-150 shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
-            title="Expand sidebar"
-          >
-            <PanelLeftOpen className="h-3 w-3" />
-          </button>
-        )}
-      </div>
-
-      {/* ── Navigation ── */}
-      <nav className="flex-1 overflow-y-auto px-3 pt-2 pb-3" aria-label="Primary">
-        <LayoutGroup>
-          {NAV.overview.map((item) => (
-            <NavLink
-              key={item.href}
-              item={item}
-              active={isActive(item)}
-              collapsed={collapsed}
-              layoutId={NAV_INDICATOR_ID}
-            />
-          ))}
-
-          <div className="h-px bg-[var(--border-subtle)] mx-2 my-3" />
-
-          {(Object.keys(NAV) as Array<keyof typeof NAV>)
-            .slice(1)
-            .map((group) => (
-              <div key={group} className="mb-3">
-                {!collapsed && (
-                  <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--text-3)]">
-                    {SECTION_TITLES[group]}
-                  </p>
-                )}
-                <div>
-                  {NAV[group].map((item) => (
-                    <NavLink
-                      key={item.href}
-                      item={item}
-                      active={isActive(item)}
-                      collapsed={collapsed}
-                      layoutId={NAV_INDICATOR_ID}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
-        </LayoutGroup>
-      </nav>
-
-      {/* ── Footer: User + Sign out ── */}
-      <div className="shrink-0 border-t border-[var(--border-subtle)]">
-        {!collapsed && (
-          <div className="px-3 py-3">
-            <div className="flex items-center gap-2.5">
-              <Avatar name={adminName} size="sm" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[12px] font-medium text-[var(--text-1)] leading-tight">
-                  {adminName}
-                </p>
-                <p className="truncate text-[11px] text-[var(--text-3)] leading-tight mt-0.5">
-                  {adminName.toLowerCase() === "administrator" ? "Admin" : "Administrator"}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-        {collapsed && (
-          <div className="flex justify-center py-3">
-            <Avatar name={adminName} size="sm" />
-          </div>
-        )}
-        <button
-          onClick={handleSignOut}
-          className={`w-full flex items-center gap-2.5 text-[13px] text-[var(--text-3)] hover:text-[var(--text-2)] hover:bg-[var(--hover-bg)] transition-colors duration-150 ${
-            collapsed ? "justify-center h-[40px]" : "px-5 py-2.5"
-          }`}
-          title="Sign out"
-        >
-          <LogOut className="h-[18px] w-[18px] shrink-0" />
-          {!collapsed && (
-            <span className="label-collapse whitespace-nowrap">Sign out</span>
-          )}
-        </button>
-      </div>
-    </aside>
-  );
-}
 
 /* ══════════════════════════════════════════════════════════════
    MobileDrawer — portal'd to <body>, zero dashboard interaction
@@ -384,18 +136,18 @@ function MobileDrawerPanel({
 
   const handleNavClick = () => onClose();
 
-  const isActive = (item: NavItem) =>
-    pathname === item.href ||
-    (item.href !== "/admin" && pathname.startsWith(item.href));
+  const isActiveByHref = (href: string) =>
+    pathname === href ||
+    (href !== "/admin" && pathname.startsWith(href));
 
   return (
     <div
       id="admin-mobile-menu"
       role="dialog"
       aria-label="Menu"
-      className={`mobile-sidebar md:hidden ${open ? "is-open" : ""}`}
+      className={`mobile-sidebar md:hidden rounded-r-[24px] ${open ? "is-open" : ""}`}
     >
-      <aside className="sidebar flex flex-col h-full w-full">
+      <div className="flex h-full flex-col overflow-hidden rounded-r-[24px]">
         {/* ── Brand + close ── */}
         <div className="flex items-center shrink-0 h-[56px] px-4">
           <Link href="/admin" className="flex items-center shrink-0" onClick={handleNavClick}>
@@ -411,69 +163,18 @@ function MobileDrawerPanel({
           </button>
         </div>
 
-        {/* ── Navigation ── */}
-        <nav className="flex-1 overflow-y-auto px-3 pt-2 pb-3" onClick={handleNavClick} aria-label="Primary">
-          <LayoutGroup>
-            {NAV.overview.map((item) => (
-              <NavLink
-                key={item.href}
-                item={item}
-                active={isActive(item)}
-                collapsed={false}
-                layoutId={NAV_INDICATOR_ID}
-              />
-            ))}
-
-            <div className="h-px bg-[var(--border-subtle)] mx-2 my-3" />
-
-            {(Object.keys(NAV) as Array<keyof typeof NAV>)
-              .slice(1)
-              .map((group) => (
-                <div key={group} className="mb-3">
-                  <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--text-3)]">
-                    {SECTION_TITLES[group]}
-                  </p>
-                  <div>
-                    {NAV[group].map((item) => (
-                      <NavLink
-                        key={item.href}
-                        item={item}
-                        active={isActive(item)}
-                        collapsed={false}
-                        layoutId={NAV_INDICATOR_ID}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
-          </LayoutGroup>
-        </nav>
-
-        {/* ── Footer ── */}
-        <div className="shrink-0 border-t border-[var(--border-subtle)]">
-          <div className="px-3 py-3">
-            <div className="flex items-center gap-2.5">
-              <Avatar name={adminName} size="sm" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[12px] font-medium text-[var(--text-1)] leading-tight">
-                  {adminName}
-                </p>
-                <p className="truncate text-[11px] text-[var(--text-3)] leading-tight mt-0.5">
-                  {adminName.toLowerCase() === "administrator" ? "Admin" : "Administrator"}
-                </p>
-              </div>
-            </div>
-          </div>
-          <button
-            onClick={handleSignOut}
-            className="w-full flex items-center gap-2.5 px-5 py-2.5 text-[13px] text-[var(--text-3)] hover:text-[var(--text-2)] hover:bg-[var(--hover-bg)] transition-colors duration-150"
-            title="Sign out"
-          >
-            <LogOut className="h-[18px] w-[18px] shrink-0" />
-            <span className="whitespace-nowrap">Sign out</span>
-          </button>
-        </div>
-      </aside>
+        <AppSidebar
+          groups={ADMIN_NAV_GROUPS}
+          pathname={pathname}
+          isActive={isActiveByHref}
+          collapsed={false}
+          onToggleCollapsed={onClose}
+          user={{ name: adminName, roleLabel: adminRoleLabel(adminName) }}
+          onSignOut={handleSignOut}
+          variant="drawer"
+          onNavigate={handleNavClick}
+        />
+      </div>
     </div>
   );
 }
@@ -492,15 +193,29 @@ export function AdminShell({
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   const closeMobile = useCallback(() => setMobileOpen(false), []);
   const toggleMobile = useCallback(() => setMobileOpen(prev => !prev), []);
   const crumbs = getBreadcrumbSegments(pathname);
+  const roleLabel = adminRoleLabel(adminName);
   // Leads carries the densest table in the app — allow it a wider container.
   // Allocation's 7-column report needs the same room.
   // Every other route keeps the default readable measure.
   const isWideRoute =
     pathname.startsWith("/admin/leads") || pathname.startsWith("/admin/allocation");
+
+  // Active-route matching — unchanged logic, now shared with AppSidebar.
+  const isActive = (href: string) =>
+    pathname === href ||
+    (href !== "/admin" && pathname.startsWith(href));
+
+  const handleSignOut = useCallback(async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }, [router]);
 
   // Hide the loading overlay when the admin shell mounts
   useEffect(() => {
@@ -529,34 +244,45 @@ export function AdminShell({
   }, [mobileOpen]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[var(--canvas)]">
-      {/* ── Desktop Sidebar ── */}
-      <div className="hidden md:block shrink-0 h-full relative">
-        <DesktopSidebar
-          collapsed={collapsed}
-          onToggle={() => setCollapsed(!collapsed)}
-          adminName={adminName}
-        />
-      </div>
+    <div
+      className="flex h-screen overflow-hidden bg-[var(--canvas)]"
+      style={{ "--sb-w": collapsed ? "72px" : "252px" } as CSSProperties}
+    >
+      {/* ── Floating desktop sidebar ── */}
+      <AppSidebar
+        groups={ADMIN_NAV_GROUPS}
+        pathname={pathname}
+        isActive={isActive}
+        collapsed={collapsed}
+        onToggleCollapsed={() => setCollapsed(!collapsed)}
+        user={{ name: adminName, roleLabel }}
+        onSignOut={handleSignOut}
+        variant="desktop"
+      />
 
       {/* ── Main Content ── */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        <header className="hidden md:flex items-center justify-between h-14 px-6 shrink-0 border-b border-[var(--border-subtle)] bg-[var(--surface)]">
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden md:ml-[calc(var(--sb-w)+24px)] md:transition-[margin-left] md:duration-[220ms] md:ease-[cubic-bezier(0.2,0.8,0.2,1)]">
+        <header className="app-topbar relative z-[29] mx-3 mt-3 hidden h-14 shrink-0 items-center justify-between rounded-[18px] border border-[var(--border)] px-4 shadow-[var(--shadow-soft)] md:flex">
           <div className="flex items-center gap-3">
             <nav aria-label="Breadcrumb">
-              <ol className="flex items-center gap-2 text-[13px]">
+              <ol className="flex items-center gap-1.5 text-[14px]">
                 <li className="text-[var(--text-2)]">{crumbs.section}</li>
-                <li aria-hidden="true" className="text-[var(--text-3)]">/</li>
-                <li aria-current="page" className="text-[var(--text-1)] font-medium">{crumbs.page}</li>
+                <li aria-hidden="true" className="text-[var(--text-3)]">
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </li>
+                <li aria-current="page" className="text-[14px] font-semibold text-[var(--text-1)]">{crumbs.page}</li>
               </ol>
             </nav>
           </div>
           <div className="flex items-center gap-3">
-            <div className="hidden lg:block">
+            <div className="hidden items-center gap-2 rounded-full bg-[var(--hover-bg)] px-3 py-1.5 tabular-nums lg:flex">
+              <Clock className="h-[14px] w-[14px] shrink-0 text-[var(--text-3)]" />
               <SafeLiveClock showLabel />
             </div>
             <div className="w-px h-4 bg-[var(--border)]" />
-            <Avatar name={adminName} size="sm" />
+            <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[var(--hover-bg)]">
+              <Avatar name={adminName} size="sm" />
+            </span>
           </div>
         </header>
 
