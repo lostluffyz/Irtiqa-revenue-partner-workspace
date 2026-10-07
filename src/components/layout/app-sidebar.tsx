@@ -15,6 +15,7 @@ import {
   BookOpen,
   CalendarCheck,
   Globe,
+  TrendingUp,
 } from "lucide-react";
 
 /* ══════════════════════════════════════════════════════════════
@@ -44,7 +45,9 @@ export interface AppSidebarProps {
   isActive: (href: string) => boolean;
   collapsed: boolean;
   onToggleCollapsed: () => void;
-  user: { name: string; roleLabel: string };
+  user: { name: string; roleLabel: string; initial?: string };
+  /** Subtitle under the brand name, e.g. "Admin console" or "Partner portal". */
+  brandSubtitle: string;
   onSignOut: () => void;
   variant: "desktop" | "drawer";
   onNavigate?: () => void;
@@ -59,6 +62,35 @@ export function adminRoleLabel(adminName: string): string {
   return adminName.toLowerCase() === "administrator" ? "Admin" : "Administrator";
 }
 
+/** Partner navigation groups — same items, labels, hrefs and order as before. */
+export const PARTNER_NAV_GROUPS: SidebarNavGroup[] = [
+  {
+    id: "overview",
+    title: null,
+    items: [{ href: "/partner", label: "Dashboard", icon: LayoutDashboard }],
+  },
+  {
+    id: "manage",
+    title: "Manage",
+    items: [{ href: "/partner/leads", label: "My Leads", icon: Target }],
+  },
+  {
+    id: "operate",
+    title: "Operate",
+    items: [
+      { href: "/partner/report", label: "Daily Report", icon: FileText },
+      { href: "/partner/progress", label: "Progress", icon: TrendingUp },
+    ],
+  },
+  {
+    id: "communicate",
+    title: "Communicate",
+    items: [
+      { href: "/partner/announcements", label: "Announcements", icon: Megaphone },
+      { href: "/partner/resources", label: "Resources", icon: BookOpen },
+    ],
+  },
+];
 /** Admin navigation groups — same items, labels, hrefs and order as before. */
 export const ADMIN_NAV_GROUPS: SidebarNavGroup[] = [
   {
@@ -110,6 +142,7 @@ export function AppSidebar({
   onSignOut,
   variant,
   onNavigate,
+  brandSubtitle,
 }: AppSidebarProps) {
   const prefersReduced = useReducedMotion();
   const navRef = useRef<HTMLElement>(null);
@@ -194,7 +227,7 @@ export function AppSidebar({
                 Revenue Partner
               </span>
               <span className="block text-[11px] text-[var(--text-3)]">
-                Admin console
+                {brandSubtitle}
               </span>
             </span>
             <button
@@ -312,7 +345,7 @@ export function AppSidebar({
               onFocus={(e) => showTip(user.name, e.currentTarget)}
               onBlur={hideTip}
             >
-              {user.name.charAt(0).toUpperCase()}
+              {user.initial ?? user.name.charAt(0).toUpperCase()}
             </span>
             <button
               type="button"
@@ -331,7 +364,7 @@ export function AppSidebar({
           <>
             <div className="flex items-center gap-2.5 rounded-[18px] bg-[var(--hover-bg)] p-2.5">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[var(--surface)] text-[13px] font-semibold text-[var(--text-2)]">
-                {user.name.charAt(0).toUpperCase()}
+                {user.initial ?? user.name.charAt(0).toUpperCase()}
               </span>
               <span className="min-w-0 flex-1 leading-tight">
                 <span className="block truncate text-[13px] font-semibold text-[var(--text-1)]">

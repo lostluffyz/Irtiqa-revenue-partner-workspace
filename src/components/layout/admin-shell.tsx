@@ -9,14 +9,11 @@ import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 import { hideLoading } from "@/lib/loading-manager";
 import { PageTransition } from "@/components/ui/page-transition";
-import { Avatar } from "@/components/ui/avatar";
 import { Brand } from "@/components/ui/brand";
-import { SafeLiveClock } from "@/components/ui/safe-live-clock";
 import { getBreadcrumbSegments } from "@/components/dashboard/helpers";
 import { AppSidebar, ADMIN_NAV_GROUPS, adminRoleLabel } from "./app-sidebar";
+import { AppTopbar } from "./app-topbar";
 import {
-  ChevronRight,
-  Clock,
   X,
 } from "lucide-react";
 
@@ -170,6 +167,7 @@ function MobileDrawerPanel({
           collapsed={false}
           onToggleCollapsed={onClose}
           user={{ name: adminName, roleLabel: adminRoleLabel(adminName) }}
+          brandSubtitle="Admin console"
           onSignOut={handleSignOut}
           variant="drawer"
           onNavigate={handleNavClick}
@@ -256,37 +254,15 @@ export function AdminShell({
         collapsed={collapsed}
         onToggleCollapsed={() => setCollapsed(!collapsed)}
         user={{ name: adminName, roleLabel }}
+        brandSubtitle="Admin console"
         onSignOut={handleSignOut}
         variant="desktop"
       />
 
       {/* ── Main Content ── */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden md:ml-[calc(var(--sb-w)+24px)] md:transition-[margin-left] md:duration-[220ms] md:ease-[cubic-bezier(0.2,0.8,0.2,1)]">
-        <header className="app-topbar relative z-[29] mx-3 mt-3 hidden h-14 shrink-0 items-center justify-between rounded-[18px] border border-[var(--border)] px-4 shadow-[var(--shadow-soft)] md:flex">
-          <div className="flex items-center gap-3">
-            <nav aria-label="Breadcrumb">
-              <ol className="flex items-center gap-1.5 text-[14px]">
-                <li className="text-[var(--text-2)]">{crumbs.section}</li>
-                <li aria-hidden="true" className="text-[var(--text-3)]">
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </li>
-                <li aria-current="page" className="text-[14px] font-semibold text-[var(--text-1)]">{crumbs.page}</li>
-              </ol>
-            </nav>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="hidden items-center gap-2 rounded-full bg-[var(--hover-bg)] px-3 py-1.5 tabular-nums lg:flex">
-              <Clock className="h-[14px] w-[14px] shrink-0 text-[var(--text-3)]" />
-              <SafeLiveClock showLabel />
-            </div>
-            <div className="w-px h-4 bg-[var(--border)]" />
-            <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[var(--hover-bg)]">
-              <Avatar name={adminName} size="sm" />
-            </span>
-          </div>
-        </header>
-
         <main className="flex-1 overflow-y-auto">
+          <AppTopbar segments={crumbs} avatarName={adminName} />
           <div className={`${isWideRoute ? "max-w-[1400px]" : "max-w-[1200px]"} mx-auto px-4 py-6 md:px-10 md:py-8 mobile-content-pad`}>
             <PageTransition>{children}</PageTransition>
           </div>

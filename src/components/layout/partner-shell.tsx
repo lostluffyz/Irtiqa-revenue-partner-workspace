@@ -3,294 +3,26 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useCallback, useRef } from "react";
+import type { CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
-import { motion, LayoutGroup } from "motion/react";
 import { createClient } from "@/lib/supabase/client";
 import { hideLoading } from "@/lib/loading-manager";
 import { PageTransition } from "@/components/ui/page-transition";
-import { Avatar } from "@/components/ui/avatar";
 import { Brand } from "@/components/ui/brand";
-import { SafeLiveClock } from "@/components/ui/safe-live-clock";
 import { getBreadcrumbSegments } from "@/components/dashboard/helpers";
+import { AppSidebar, PARTNER_NAV_GROUPS } from "./app-sidebar";
+import { AppTopbar } from "./app-topbar";
 import {
   LayoutDashboard,
   Target,
   FileText,
   TrendingUp,
-  BookOpen,
-  Megaphone,
-  PanelLeftClose,
-  PanelLeftOpen,
-  LogOut,
   Ellipsis,
   X,
 } from "lucide-react";
 
-const NAV_INDICATOR_ID = "partner-nav-indicator";
-
-interface NavItem {
-  href: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-}
-
-const NAV = {
-  overview: [
-    { href: "/partner", label: "Dashboard", icon: LayoutDashboard },
-  ],
-  manage: [
-    { href: "/partner/leads", label: "My Leads", icon: Target },
-  ],
-  operate: [
-    { href: "/partner/report", label: "Daily Report", icon: FileText },
-    { href: "/partner/progress", label: "Progress", icon: TrendingUp },
-  ],
-  communicate: [
-    { href: "/partner/announcements", label: "Announcements", icon: Megaphone },
-    { href: "/partner/resources", label: "Resources", icon: BookOpen },
-  ],
-};
-
-const SECTION_TITLES: Record<string, string> = {
-  manage: "Manage",
-  operate: "Operate",
-  communicate: "Communicate",
-};
-
-function NavLink({
-  item,
-  active,
-  collapsed,
-  layoutId,
-}: {
-  item: NavItem;
-  active: boolean;
-  collapsed: boolean;
-  layoutId: string;
-}) {
-  return (
-    <Link
-      href={item.href}
-      aria-current={active ? "page" : undefined}
-      aria-label={item.label}
-      className={`relative flex items-center text-[13px] transition-colors duration-150 rounded-[8px] mb-0.5 focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-[-2px] ${
-        collapsed
-          ? "justify-center h-[36px]"
-          : "gap-2.5 px-3 py-[7px]"
-      } ${
-        active
-          ? "font-medium text-[var(--text-1)]"
-          : "text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)]"
-      }`}
-      title={collapsed ? item.label : undefined}
-    >
-      {active && (
-        <motion.div
-          layoutId={layoutId}
-          className="absolute inset-0 bg-[var(--hover-bg)] rounded-[8px]"
-          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-        />
-      )}
-      {active && (
-        <span
-          aria-hidden="true"
-          className="absolute left-[3px] top-[7px] bottom-[7px] z-10 w-[3px] rounded-full bg-[var(--accent)]"
-        />
-      )}
-      <item.icon
-        className={`relative z-10 h-[18px] w-[18px] shrink-0 ${
-          active ? "text-[var(--accent)]" : "text-[var(--text-3)]"
-        }`}
-      />
-      {!collapsed && (
-        <span className="relative z-10 label-collapse whitespace-nowrap">
-          {item.label}
-        </span>
-      )}
-    </Link>
-  );
-}
-
-/* ══════════════════════════════════════════════════════════════
-   Sidebar — used by both desktop and mobile (mobile via portal)
-   ══════════════════════════════════════════════════════════════ */
-
-function Sidebar({
-  collapsed,
-  onToggle,
-  partnerName,
-  isMobile = false,
-  onCloseMobile,
-  variant = "default",
-}: {
-  collapsed: boolean;
-  onToggle: () => void;
-  partnerName: string;
-  isMobile?: boolean;
-  onCloseMobile?: () => void;
-  variant?: "default" | "drawer";
-}) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const supabase = createClient();
-
-  const handleSignOut = async () => {
-    if (isMobile && onCloseMobile) onCloseMobile();
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
-  };
-
-  const handleNavClick = () => {
-    if (isMobile && onCloseMobile) onCloseMobile();
-  };
-
-  const isActive = (item: NavItem) =>
-    pathname === item.href ||
-    (item.href !== "/partner" && pathname.startsWith(item.href));
-
-  return (
-    <aside
-      className={`sidebar flex flex-col h-full transition-[width] duration-200 ease-out ${
-        variant === "drawer"
-          ? "w-full"
-          : collapsed
-            ? "w-[var(--sidebar-collapsed-width)]"
-            : "w-[var(--sidebar-width)]"
-      }`}
-    >
-      {/* ── Brand ── */}
-      <div
-        className={`flex items-center shrink-0 h-[56px] transition-all duration-200 ${
-          collapsed ? "justify-center px-0" : "px-4"
-        }`}
-      >
-        <Link
-          href="/partner"
-          className={`flex items-center shrink-0 ${
-            collapsed ? "justify-center" : ""
-          }`}
-          onClick={handleNavClick}
-        >
-          {!collapsed && (
-            <Brand color="dark" size="sm" className="label-collapse" />
-          )}
-        </Link>
-
-        {/* Mobile close button — the FAB is gone, this + overlay + Esc close the drawer */}
-        {isMobile && (
-          <button
-            type="button"
-            onClick={onCloseMobile}
-            aria-label="Close menu"
-            className="ml-auto flex min-h-[44px] min-w-[44px] items-center justify-center rounded-[12px] text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)] transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-[-2px]"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        )}
-
-        {/* Desktop toggle button */}
-        {!isMobile && !collapsed && (
-          <button
-            onClick={onToggle}
-            className="ml-auto p-1.5 rounded-[6px] text-[var(--text-3)] hover:text-[var(--text-2)] hover:bg-[var(--hover-bg)] transition-colors duration-150"
-            title="Collapse sidebar"
-          >
-            <PanelLeftClose className="h-4 w-4" />
-          </button>
-        )}
-        {!isMobile && collapsed && (
-          <button
-            onClick={onToggle}
-            className="hidden md:flex absolute top-3 -right-3 items-center justify-center w-[22px] h-[22px] rounded-full bg-[var(--surface)] border border-[var(--border)] text-[var(--text-3)] hover:text-[var(--text-2)] hover:border-[#D1D5DB] transition-colors duration-150 shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
-            title="Expand sidebar"
-          >
-            <PanelLeftOpen className="h-3 w-3" />
-          </button>
-        )}
-      </div>
-
-      {/* ── Navigation ── */}
-      <nav className="flex-1 overflow-y-auto px-3 pt-2 pb-3" onClick={handleNavClick} aria-label="Primary">
-        <LayoutGroup>
-          {NAV.overview.map((item) => (
-            <NavLink
-              key={item.href}
-              item={item}
-              active={isActive(item)}
-              collapsed={collapsed}
-              layoutId={NAV_INDICATOR_ID}
-            />
-          ))}
-
-          <div className="h-px bg-[var(--border-subtle)] mx-2 my-3" />
-
-          {(Object.keys(NAV) as Array<keyof typeof NAV>)
-            .slice(1)
-            .map((group) => (
-              <div key={group} className="mb-3">
-                {!collapsed && (
-                  <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--text-3)]">
-                    {SECTION_TITLES[group]}
-                  </p>
-                )}
-                <div>
-                  {NAV[group].map((item) => (
-                    <NavLink
-                      key={item.href}
-                      item={item}
-                      active={isActive(item)}
-                      collapsed={collapsed}
-                      layoutId={NAV_INDICATOR_ID}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
-        </LayoutGroup>
-      </nav>
-
-      {/* ── Footer ── */}
-      <div className="shrink-0 border-t border-[var(--border-subtle)]">
-        {!collapsed && (
-          <div className="px-3 py-3">
-            <div className="flex items-center gap-2.5">
-              <Avatar name={partnerName} size="sm" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[12px] font-medium text-[var(--text-1)] leading-tight">
-                  {partnerName}
-                </p>
-                <p className="truncate text-[11px] text-[var(--text-3)] leading-tight mt-0.5">
-                  Partner
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-        {collapsed && (
-          <div className="flex justify-center py-3">
-            <Avatar name={partnerName} size="sm" />
-          </div>
-        )}
-        <button
-          onClick={handleSignOut}
-          className={`w-full flex items-center gap-2.5 text-[13px] text-[var(--text-3)] hover:text-[var(--text-2)] hover:bg-[var(--hover-bg)] transition-colors duration-150 ${
-            collapsed ? "justify-center h-[40px]" : "px-5 py-2.5"
-          }`}
-          title="Sign out"
-        >
-          <LogOut className="h-[18px] w-[18px] shrink-0" />
-          {!collapsed && (
-            <span className="label-collapse whitespace-nowrap">
-              Sign out
-            </span>
-          )}
-        </button>
-      </div>
-    </aside>
-  );
-}
+/* NavLink + Sidebar live in ./app-sidebar (floating AppSidebar). */
 
 /* ══════════════════════════════════════════════════════════════
    MobileDrawer — portal'd to <body>, zero dashboard interaction
@@ -368,21 +100,57 @@ function MobileDrawerPanel({
   onClose: () => void;
   partnerName: string;
 }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const supabase = createClient();
+
+  const handleSignOut = async () => {
+    onClose();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  };
+
+  const isActiveByHref = (href: string) =>
+    pathname === href ||
+    (href !== "/partner" && pathname.startsWith(href));
+
   return (
     <div
       id="partner-mobile-menu"
       role="dialog"
       aria-label="Menu"
-      className={`mobile-sidebar md:hidden ${open ? "is-open" : ""}`}
+      className={`mobile-sidebar md:hidden rounded-r-[24px] ${open ? "is-open" : ""}`}
     >
-      <Sidebar
-        collapsed={false}
-        onToggle={onClose}
-        partnerName={partnerName}
-        variant="drawer"
-        isMobile
-        onCloseMobile={onClose}
-      />
+      <div className="flex h-full flex-col overflow-hidden rounded-r-[24px]">
+        {/* ── Brand + close ── */}
+        <div className="flex items-center shrink-0 h-[56px] px-4">
+          <Link href="/partner" className="flex items-center shrink-0" onClick={onClose}>
+            <Brand color="dark" size="sm" />
+          </Link>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close menu"
+            className="ml-auto flex min-h-[44px] min-w-[44px] items-center justify-center rounded-[12px] text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)] transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-[-2px]"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <AppSidebar
+          groups={PARTNER_NAV_GROUPS}
+          pathname={pathname}
+          isActive={isActiveByHref}
+          collapsed={false}
+          onToggleCollapsed={onClose}
+          user={{ name: partnerName, roleLabel: "Partner" }}
+          brandSubtitle="Partner portal"
+          onSignOut={handleSignOut}
+          variant="drawer"
+          onNavigate={onClose}
+        />
+      </div>
     </div>
   );
 }
@@ -401,6 +169,7 @@ export function PartnerShell({
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   const closeMobile = useCallback(() => setMobileOpen(false), []);
   const openMobile = useCallback(() => setMobileOpen(true), []);
@@ -409,6 +178,13 @@ export function PartnerShell({
 
   const isActiveTab = (href: string) =>
     pathname === href || (href !== "/partner" && pathname.startsWith(href));
+
+  const handleSignOut = useCallback(async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }, [router]);
 
   const TABS = [
     { href: "/partner", label: "Dashboard", icon: LayoutDashboard },
@@ -444,38 +220,27 @@ export function PartnerShell({
   }, [mobileOpen]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[var(--canvas)]">
-      {/* ── Desktop Sidebar ── */}
-      <div className="hidden md:block shrink-0 h-full relative">
-        <Sidebar
-          collapsed={collapsed}
-          onToggle={() => setCollapsed(!collapsed)}
-          partnerName={partnerName}
-        />
-      </div>
+    <div
+      className="flex h-screen overflow-hidden bg-[var(--canvas)]"
+      style={{ "--sb-w": collapsed ? "72px" : "252px" } as CSSProperties}
+    >
+      {/* ── Floating desktop sidebar ── */}
+      <AppSidebar
+        groups={PARTNER_NAV_GROUPS}
+        pathname={pathname}
+        isActive={isActiveTab}
+        collapsed={collapsed}
+        onToggleCollapsed={() => setCollapsed(!collapsed)}
+        user={{ name: partnerName, roleLabel: "Partner" }}
+        brandSubtitle="Partner portal"
+        onSignOut={handleSignOut}
+        variant="desktop"
+      />
 
       {/* ── Main Content ── */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        <header className="hidden md:flex items-center justify-between h-14 px-6 shrink-0 border-b border-[var(--border-subtle)] bg-[var(--surface)]">
-          <div className="flex items-center gap-3">
-            <nav aria-label="Breadcrumb">
-              <ol className="flex items-center gap-2 text-[13px]">
-                <li className="text-[var(--text-2)]">{crumbs.section}</li>
-                <li aria-hidden="true" className="text-[var(--text-3)]">/</li>
-                <li aria-current="page" className="text-[var(--text-1)] font-medium">{crumbs.page}</li>
-              </ol>
-            </nav>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="hidden lg:block">
-              <SafeLiveClock showLabel />
-            </div>
-            <div className="w-px h-4 bg-[var(--border)]" />
-            <Avatar name={partnerName} size="sm" />
-          </div>
-        </header>
-
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden md:ml-[calc(var(--sb-w)+24px)] md:transition-[margin-left] md:duration-[220ms] md:ease-[cubic-bezier(0.2,0.8,0.2,1)]">
         <main className="flex-1 overflow-y-auto">
+          <AppTopbar segments={crumbs} avatarName={partnerName} />
           <div className="max-w-[1200px] mx-auto px-4 py-6 md:px-10 md:py-8 mobile-content-pad partner-top-pad tabbar-clearance">
             <PageTransition>{children}</PageTransition>
           </div>

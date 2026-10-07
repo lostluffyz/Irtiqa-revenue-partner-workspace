@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import {
   AppSidebar,
   ADMIN_NAV_GROUPS,
+  PARTNER_NAV_GROUPS,
   ADMIN_NAV_ACTIVE_LAYOUT_ID,
   adminRoleLabel,
   type AppSidebarProps,
@@ -27,6 +28,23 @@ const baseProps: AppSidebarProps = {
   collapsed: false,
   onToggleCollapsed: () => {},
   user: { name: "Administrator", roleLabel: "Admin" },
+  brandSubtitle: "Admin console",
+  onSignOut: () => {},
+  variant: "desktop",
+};
+
+const PARTNER_TEST_PATHNAME = "/partner/leads";
+
+const partnerProps: AppSidebarProps = {
+  groups: PARTNER_NAV_GROUPS,
+  pathname: PARTNER_TEST_PATHNAME,
+  isActive: (href: string) =>
+    PARTNER_TEST_PATHNAME === href ||
+    (href !== "/partner" && PARTNER_TEST_PATHNAME.startsWith(href)),
+  collapsed: false,
+  onToggleCollapsed: () => {},
+  user: { name: "Jane Doe", roleLabel: "Partner" },
+  brandSubtitle: "Partner portal",
   onSignOut: () => {},
   variant: "desktop",
 };
@@ -87,5 +105,49 @@ describe("AppSidebar", () => {
   it("adminRoleLabel matches the old shell behavior", () => {
     expect(adminRoleLabel("Administrator")).toBe("Admin");
     expect(adminRoleLabel("Jane Doe")).toBe("Administrator");
+  });
+
+  it("admin fixture renders brandSubtitle 'Admin console' and all 9 admin links", () => {
+    const html = renderToStaticMarkup(<AppSidebar {...baseProps} />);
+    expect(html).toContain("Admin console");
+    expect(html).not.toContain("Partner portal");
+    const linkCount = (html.match(/<a /g) || []).length;
+    expect(linkCount).toBe(9);
+    for (const group of ADMIN_NAV_GROUPS) {
+      for (const item of group.items) {
+        expect(html).toContain(`href="${item.href}"`);
+      }
+    }
+  });
+
+  it("partner fixture renders brandSubtitle 'Partner portal', role pill 'Partner', 6 links", () => {
+    const html = renderToStaticMarkup(<AppSidebar {...partnerProps} />);
+    expect(html).toContain("Partner portal");
+    expect(html).not.toContain("Admin console");
+    expect(html).toContain("Partner");
+    const linkCount = (html.match(/<a /g) || []).length;
+    expect(linkCount).toBe(6);
+    for (const label of ["Dashboard", "My Leads", "Daily Report", "Progress", "Announcements", "Resources"]) {
+      expect(html).toContain(label);
+    }
+  });
+
+  it("partner active link has aria-current and drawer has no collapse toggle", () => {
+    const html = renderToStaticMarkup(<AppSidebar {...partnerProps} />);
+    const currentCount = (html.match(/aria-current="page"/g) || []).length;
+    expect(currentCount).toBe(1);
+    expect(html).toContain('href="/partner/leads"');
+    const drawer = renderToStaticMarkup(<AppSidebar {...partnerProps} variant="drawer" />);
+    expect(drawer).not.toContain("Collapse sidebar");
+    expect(drawer).not.toContain("Expand sidebar");
+    // Drawer omits the brand header (the panel provides its own Brand + X row);
+    // it keeps the user tile + Sign out at the bottom.
+    expect(drawer).toContain("Jane Doe");
+    expect(drawer).toContain("Sign out");
+  });
+
+  it("user initial falls back to first letter of name", () => {
+    const html = renderToStaticMarkup(<AppSidebar {...partnerProps} />);
+    expect(html).toContain(">J<");
   });
 });
