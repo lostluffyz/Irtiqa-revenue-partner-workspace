@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
+import { Avatar, getInitials } from "@/components/ui/avatar";
 import {
   AppSidebar,
   ADMIN_NAV_GROUPS,
@@ -43,7 +44,7 @@ const partnerProps: AppSidebarProps = {
     (href !== "/partner" && PARTNER_TEST_PATHNAME.startsWith(href)),
   collapsed: false,
   onToggleCollapsed: () => {},
-  user: { name: "Jane Doe", roleLabel: "Partner" },
+  user: { name: "Dhruv Jha", roleLabel: "Partner" },
   brandSubtitle: "Partner portal",
   onSignOut: () => {},
   variant: "desktop",
@@ -142,12 +143,42 @@ describe("AppSidebar", () => {
     expect(drawer).not.toContain("Expand sidebar");
     // Drawer omits the brand header (the panel provides its own Brand + X row);
     // it keeps the user tile + Sign out at the bottom.
-    expect(drawer).toContain("Jane Doe");
+    expect(drawer).toContain("Dhruv Jha");
     expect(drawer).toContain("Sign out");
   });
 
-  it("user initial falls back to first letter of name", () => {
-    const html = renderToStaticMarkup(<AppSidebar {...partnerProps} />);
-    expect(html).toContain(">J<");
+  it("user tile uses the shared getInitials source of truth", () => {
+    expect(getInitials("Dhruv Jha")).toBe("DJ");
+    expect(getInitials("Administrator")).toBe("A");
+    expect(getInitials("Boluwatife Olukayode")).toBe("BO");
+    expect(getInitials("Prosper")).toBe("P");
+  });
+
+  it("partner fixture renders 'DJ' in expanded and collapsed rail tiles", () => {
+    const expanded = renderToStaticMarkup(<AppSidebar {...partnerProps} />);
+    expect(expanded).toContain(">DJ<");
+    expect(expanded).not.toContain(">D<");
+    const rail = renderToStaticMarkup(<AppSidebar {...partnerProps} collapsed={true} />);
+    expect(rail).toContain(">DJ<");
+  });
+
+  it("admin fixture still renders 'A'", () => {
+    const html = renderToStaticMarkup(<AppSidebar {...baseProps} />);
+    expect(html).toContain(">A<");
+  });
+
+  it("sidebar tile initials equal Avatar initials for the same name", () => {
+    for (const name of ["Dhruv Jha", "Boluwatife Olukayode"]) {
+      const avatarHtml = renderToStaticMarkup(<Avatar name={name} />);
+      const expected = getInitials(name);
+      expect(avatarHtml).toContain(`>${expected}<`);
+      const sidebarHtml = renderToStaticMarkup(
+        <AppSidebar
+          {...partnerProps}
+          user={{ name, roleLabel: "Partner" }}
+        />,
+      );
+      expect(sidebarHtml).toContain(`>${expected}<`);
+    }
   });
 });

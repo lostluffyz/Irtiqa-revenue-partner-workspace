@@ -29,7 +29,7 @@ function getColorFromName(name: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 
-function getInitials(name: string): string {
+export function getInitials(name: string): string {
   return name
     .split(" ")
     .map((n) => n[0])

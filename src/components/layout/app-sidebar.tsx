@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { motion, LayoutGroup, useReducedMotion } from "motion/react";
 import { ChevronsLeft, LogOut } from "lucide-react";
+import { getInitials } from "@/components/ui/avatar";
 import {
   LayoutDashboard,
   Users,
@@ -339,13 +340,13 @@ export function AppSidebar({
         {rail ? (
           <div className="flex flex-col items-center gap-2">
             <span
-              className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[var(--hover-bg)] text-[13px] font-semibold text-[var(--text-2)]"
+              className="flex h-9 w-9 items-center justify-center whitespace-nowrap rounded-[12px] bg-[var(--hover-bg)] text-[13px] font-semibold leading-none tracking-[0.02em] text-[var(--text-2)]"
               onMouseEnter={(e) => showTip(user.name, e.currentTarget)}
               onMouseLeave={hideTip}
               onFocus={(e) => showTip(user.name, e.currentTarget)}
               onBlur={hideTip}
             >
-              {user.initial ?? user.name.charAt(0).toUpperCase()}
+              {user.initial ?? getInitials(user.name)}
             </span>
             <button
               type="button"
@@ -363,8 +364,8 @@ export function AppSidebar({
         ) : (
           <>
             <div className="flex items-center gap-2.5 rounded-[18px] bg-[var(--hover-bg)] p-2.5">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[var(--surface)] text-[13px] font-semibold text-[var(--text-2)]">
-                {user.initial ?? user.name.charAt(0).toUpperCase()}
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center whitespace-nowrap rounded-[12px] bg-[var(--surface)] text-[13px] font-semibold leading-none tracking-[0.02em] text-[var(--text-2)]">
+                {user.initial ?? getInitials(user.name)}
               </span>
               <span className="min-w-0 flex-1 leading-tight">
                 <span className="block truncate text-[13px] font-semibold text-[var(--text-1)]">
