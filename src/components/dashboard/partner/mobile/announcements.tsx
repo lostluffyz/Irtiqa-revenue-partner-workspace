@@ -24,33 +24,27 @@ export function MobileAnnouncements({ announcements }: AnnouncementsProps) {
         </Link>
       </div>
 
-      {announcements.length === 0 ? (
-        <div className="mobile-empty">
-          <Megaphone className="mobile-empty-icon" />
-          <p className="mobile-empty-text">No announcements yet</p>
-        </div>
-      ) : (
-        <div className="mobile-section-body">
-          {announcements.map((announcement) => (
-            <div key={announcement.id} className="mobile-announce-item">
-              <div className="flex items-center gap-2 mb-1">
-                {announcement.is_pinned && (
-                  <Pin className="h-3.5 w-3.5 text-[var(--accent)] shrink-0" />
-                )}
-                <p className="text-[14px] font-medium text-[var(--text-1)] leading-snug truncate">
-                  {announcement.title}
-                </p>
-                {announcement.is_pinned && (
-                  <Badge variant="info" className="text-[11px] shrink-0">Pinned</Badge>
-                )}
-              </div>
-              <p className="text-[12px] text-[var(--text-3)] tabular-nums">
-                {getRelativeTimePartner(announcement.created_at)}
+      {/* Rendered only when announcements exist (see index). */}
+      <div className="mobile-section-body">
+        {announcements.map((announcement) => (
+          <div key={announcement.id} className="mobile-announce-item">
+            <div className="flex items-center gap-2 mb-1">
+              {announcement.is_pinned && (
+                <Pin className="h-3.5 w-3.5 text-[var(--accent)] shrink-0" />
+              )}
+              <p className="text-[14px] font-medium text-[var(--text-1)] leading-snug truncate">
+                {announcement.title}
               </p>
+              {announcement.is_pinned && (
+                <Badge variant="info" className="text-[11px] shrink-0">Pinned</Badge>
+              )}
             </div>
-          ))}
-        </div>
-      )}
+            <p className="text-[12px] text-[var(--text-3)] tabular-nums">
+              {getRelativeTimePartner(announcement.created_at)}
+            </p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

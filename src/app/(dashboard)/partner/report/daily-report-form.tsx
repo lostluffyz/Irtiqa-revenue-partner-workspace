@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   FileText,
@@ -8,14 +8,29 @@ import {
   MessageSquare,
   StickyNote,
   Send,
+  CalendarCheck,
+  Trophy,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
+import { PageHeader } from "@/components/ui/page-header";
+import { formatDeadlineTime } from "@/components/dashboard/helpers";
+import { DueLine } from "@/components/dashboard/use-viewer-deadline";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { submitDailyReportAction } from "@/app/(dashboard)/partner/actions";
 import type { DailyReport } from "@/types/database";
 
 // ============================================
-// Date Formatting
+// Date Formatting (manual parse — timezone-safe)
 // ============================================
 
 function formatHumanDate(dateStr: string): string {
@@ -43,55 +58,77 @@ function formatShortTime(dateStr: string): string {
 interface DailyReportViewProps {
   report: DailyReport | null;
   date: string;
+  deadlineHour?: number;
+  deadlineMinute?: number;
 }
 
 // ============================================
-// Metric Card (interactive)
+// Metric Stepper (interactive)
+// Values flow into the SAME hidden-visible field names as before.
 // ============================================
 
-function MetricCard({
+function MetricStepper({
   name,
   label,
+  caption,
   icon: Icon,
-  description,
-  defaultValue,
+  value,
+  onChange,
   disabled,
 }: {
   name: string;
   label: string;
+  caption: string;
   icon: React.ElementType;
-  description: string;
-  defaultValue?: number;
+  value: number;
+  onChange: (next: number) => void;
   disabled?: boolean;
 }) {
+  const clamp = (n: number) => (Number.isNaN(n) ? 0 : Math.max(0, Math.floor(n)));
+
   return (
-    <div
-      className={`
-        group relative p-4 rounded-[12px] border border-[var(--border)] bg-[var(--surface)]
-        transition-all duration-150
-        ${disabled ? "opacity-60" : "hover:border-[var(--accent)] hover:shadow-[0_0_0_1px_var(--accent)]"}
-      `}
-    >
-      <div className="flex items-center gap-2 mb-3">
-        <div className="w-7 h-7 rounded-[8px] bg-[var(--hover-bg)] flex items-center justify-center transition-colors duration-150 group-hover:bg-[var(--accent)]/10">
-          <Icon className="h-3.5 w-3.5 text-[var(--text-3)] transition-colors duration-150 group-hover:text-[var(--accent)]" />
+    <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-[var(--shadow-soft)]">
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[var(--hover-bg)] text-[var(--text-2)]">
+          <Icon className="h-[18px] w-[18px]" />
         </div>
-        <span className="text-[12px] font-semibold text-[var(--text-2)]">
-          {label}
-        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-semibold text-[var(--text-1)]">{label}</p>
+          <p className="mt-0.5 text-[12px] text-[var(--text-2)]">{caption}</p>
+        </div>
       </div>
-      <input
-        type="number"
-        name={name}
-        min="0"
-        defaultValue={defaultValue ?? 0}
-        required
-        disabled={disabled}
-        className="w-full text-center text-[28px] font-bold text-[var(--text-1)] tabular-nums bg-transparent border-none outline-none focus:ring-0 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-      />
-      <p className="text-[11px] text-[var(--text-3)] text-center mt-1">
-        {description}
-      </p>
+      <div className="mt-3 flex items-center justify-center gap-2">
+        <button
+          type="button"
+          onClick={() => onChange(Math.max(0, value - 1))}
+          disabled={disabled}
+          aria-label={`Decrease ${label}`}
+          className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-[10px] border border-[var(--border)] bg-[var(--surface)] text-[18px] font-medium text-[var(--text-2)] transition-colors duration-150 hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          −
+        </button>
+        <input
+          type="number"
+          name={name}
+          inputMode="numeric"
+          min="0"
+          required
+          value={value}
+          onChange={(e) => onChange(clamp(parseInt(e.target.value, 10)))}
+          disabled={disabled}
+          aria-label={label}
+          className="w-20 min-h-[44px] text-center text-[22px] font-bold text-[var(--text-1)] tabular-nums bg-transparent border border-[var(--border)] rounded-[10px] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-0 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        />
+        <button
+          type="button"
+          onClick={() => onChange(value + 1)}
+          disabled={disabled}
+          aria-label={`Increase ${label}`}
+          className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-[10px] border border-[var(--border)] bg-[var(--surface)] text-[18px] font-medium text-[var(--text-2)] transition-colors duration-150 hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          +
+        </button>
+      </div>
     </div>
   );
 }
@@ -146,11 +183,19 @@ function ReflectionBlock({ title, icon: Icon, content }: { title: string; icon: 
 // Main Component
 // ============================================
 
-export function DailyReportView({ report, date }: DailyReportViewProps) {
+export function DailyReportView({ report, date, deadlineHour, deadlineMinute }: DailyReportViewProps) {
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
+  const submitBtnRef = useRef<HTMLButtonElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  // Metric values — same numbers the form submits via the SAME field names.
+  const [leadsContacted, setLeadsContacted] = useState(0);
+  const [appointmentsBooked, setAppointmentsBooked] = useState(0);
+  const [dealsClosed, setDealsClosed] = useState(0);
 
   const isSubmitted = report || submitted;
 
@@ -175,43 +220,68 @@ export function DailyReportView({ report, date }: DailyReportViewProps) {
     setLoading(false);
   }, [router]);
 
+  const closeConfirm = useCallback(() => {
+    setConfirmOpen(false);
+    submitBtnRef.current?.focus();
+  }, []);
+
+  // Open the confirm dialog only when the form's own built-in
+  // validation (required, min) already passes — same rules as before.
+  const handleFormSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = formRef.current;
+    if (!form) return;
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+    setConfirmOpen(true);
+  }, []);
+
+  const confirmSubmit = useCallback(() => {
+    const form = formRef.current;
+    if (!form) return;
+    setConfirmOpen(false);
+    handleSubmit(new FormData(form));
+  }, [handleSubmit]);
+
+  const allZero = leadsContacted === 0 && appointmentsBooked === 0 && dealsClosed === 0;
+
   return (
     <div>
       {/* ─── Header ─── */}
-      <div className="mb-8">
-        <h1 className="text-[28px] font-bold tracking-[-0.025em] text-[var(--text-1)]">
-          Daily Report
-        </h1>
-        <p className="mt-1 text-[14px] text-[var(--text-2)]">
-          {formatHumanDate(date)}
-        </p>
-        <div className="mt-3 h-px bg-[var(--border-subtle)]" />
-      </div>
-
-      {/* ─── Status ─── */}
       <div className="mb-6">
-        {isSubmitted ? (
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#ECFDF5] border border-[#A7F3D0]">
-            <CheckCircle2 className="h-3.5 w-3.5 text-[#059669]" />
-            <span className="text-[12px] font-medium text-[#047857]">
-              Submitted
-            </span>
-          </div>
-        ) : (
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--hover-bg)] border border-[var(--border)]">
-            <FileText className="h-3.5 w-3.5 text-[var(--text-3)]" />
-            <span className="text-[12px] font-medium text-[var(--text-2)]">
-              Draft — not yet submitted
-            </span>
-          </div>
+        <PageHeader
+          title="Daily Report"
+          description={formatHumanDate(date)}
+          action={
+            isSubmitted ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--status-success)]/25 bg-[var(--status-success-bg)] px-3 py-1.5 text-[12px] font-medium text-[var(--status-success)]">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Submitted
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--hover-bg)] px-3 py-1.5 text-[12px] font-medium text-[var(--text-2)]">
+                <FileText className="h-3.5 w-3.5 text-[var(--text-3)]" />
+                Not submitted yet
+              </span>
+            )
+          }
+        />
+        {!isSubmitted && deadlineHour !== undefined && deadlineMinute !== undefined && (
+          <p className="mt-2 text-[13px] text-[var(--text-3)] tabular-nums">
+            Due {formatDeadlineTime(deadlineHour, deadlineMinute)} UTC ·{" "}
+            <DueLine utcHour={deadlineHour} utcMinute={deadlineMinute} />
+          </p>
         )}
+        <div className="mt-4 h-px bg-[var(--border-subtle)]" />
       </div>
 
       {isSubmitted ? (
-        /* ═══ Submitted View ═══ */
-        <div className="space-y-8">
+        /* ═══ Submitted View (locked, read-only) ═══ */
+        <div className="space-y-6">
           {/* Metrics */}
-          <div>
+          <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)]">
             <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-3)] mb-4">
               Today&apos;s Numbers
             </p>
@@ -236,7 +306,7 @@ export function DailyReportView({ report, date }: DailyReportViewProps) {
 
           {/* Reflections */}
           {(report!.biggest_challenge || report!.additional_notes) && (
-            <div className="space-y-6">
+            <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)] space-y-5">
               <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-3)]">
                 Reflection
               </p>
@@ -258,49 +328,55 @@ export function DailyReportView({ report, date }: DailyReportViewProps) {
           )}
 
           {/* Submission time */}
-          <div className="pt-4 border-t border-[var(--border-subtle)]">
+          <div className="pt-2">
             <p className="text-[11px] text-[var(--text-3)] tabular-nums">
               Submitted at {formatShortTime(report!.created_at)}
             </p>
           </div>
         </div>
       ) : (
-        /* ═══ Draft View ═══ */
-        <form action={handleSubmit} className="space-y-8">
+        /* ═══ Form View ═══ */
+        <form ref={formRef} onSubmit={handleFormSubmit} className="space-y-6">
           {error && <FormError message={error} />}
 
           {/* ─── Daily Metrics ─── */}
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-3)] mb-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-3)] mb-3">
               Daily Metrics
             </p>
-            <div className="grid grid-cols-3 gap-4">
-              <MetricCard
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              <MetricStepper
                 name="leadsContacted"
                 label="Leads Contacted"
+                caption="Calls, emails and outreach today"
                 icon={Send}
-                description="calls, emails, outreach"
+                value={leadsContacted}
+                onChange={setLeadsContacted}
                 disabled={loading}
               />
-              <MetricCard
+              <MetricStepper
                 name="appointmentsBooked"
                 label="Appointments"
-                icon={CheckCircle2}
-                description="meetings scheduled"
+                caption="Meetings scheduled today"
+                icon={CalendarCheck}
+                value={appointmentsBooked}
+                onChange={setAppointmentsBooked}
                 disabled={loading}
               />
-              <MetricCard
+              <MetricStepper
                 name="dealsClosed"
                 label="Deals Closed"
-                icon={CheckCircle2}
-                description="partnerships finalized"
+                caption="Partnerships finalized today"
+                icon={Trophy}
+                value={dealsClosed}
+                onChange={setDealsClosed}
                 disabled={loading}
               />
             </div>
           </div>
 
           {/* ─── Reflection ─── */}
-          <div className="space-y-4">
+          <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)] space-y-4">
             <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-3)]">
               Reflection
             </p>
@@ -313,7 +389,7 @@ export function DailyReportView({ report, date }: DailyReportViewProps) {
                   htmlFor="biggestChallenge"
                   className="text-[12px] font-semibold text-[var(--text-2)]"
                 >
-                  Biggest Challenge
+                  Biggest Challenge <span className="font-normal text-[var(--text-3)]">(optional)</span>
                 </label>
               </div>
               <input
@@ -323,8 +399,9 @@ export function DailyReportView({ report, date }: DailyReportViewProps) {
                 defaultValue=""
                 placeholder="What slowed you down today?"
                 disabled={loading}
-                className="w-full px-3 py-2 text-[13px] bg-[var(--canvas)] border border-[var(--border)] rounded-[8px] text-[var(--text-1)] placeholder:text-[var(--text-3)] placeholder:italic transition-all duration-150 hover:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-0 focus:border-[var(--accent)] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full min-h-[44px] px-3 py-2 text-[13px] bg-[var(--surface)] border border-[var(--border)] rounded-[12px] text-[var(--text-1)] placeholder:text-[var(--text-3)] transition-all duration-150 hover:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-0 focus:border-[var(--accent)] disabled:opacity-50 disabled:cursor-not-allowed"
               />
+              <p className="text-[11px] text-[var(--text-3)]">Up to 2000 characters.</p>
             </div>
 
             {/* Additional Notes */}
@@ -335,7 +412,7 @@ export function DailyReportView({ report, date }: DailyReportViewProps) {
                   htmlFor="additionalNotes"
                   className="text-[12px] font-semibold text-[var(--text-2)]"
                 >
-                  Additional Notes
+                  Additional Notes <span className="font-normal text-[var(--text-3)]">(optional)</span>
                 </label>
               </div>
               <textarea
@@ -345,27 +422,31 @@ export function DailyReportView({ report, date }: DailyReportViewProps) {
                 defaultValue=""
                 placeholder="Wins, learnings, anything worth remembering..."
                 disabled={loading}
-                className="w-full px-3 py-2.5 text-[13px] leading-relaxed min-h-[100px] bg-[var(--canvas)] border border-[var(--border)] rounded-[8px] text-[var(--text-1)] placeholder:text-[var(--text-3)] placeholder:italic resize-none transition-all duration-150 hover:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-0 focus:border-[var(--accent)] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-3 py-2.5 text-[13px] leading-relaxed min-h-[100px] bg-[var(--surface)] border border-[var(--border)] rounded-[12px] text-[var(--text-1)] placeholder:text-[var(--text-3)] resize-none transition-all duration-150 hover:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-0 focus:border-[var(--accent)] disabled:opacity-50 disabled:cursor-not-allowed"
               />
+              <p className="text-[11px] text-[var(--text-3)]">Up to 5000 characters.</p>
             </div>
           </div>
 
           {/* ─── Submit ─── */}
           <div className="pt-2">
-            <div className="flex items-center justify-between gap-4">
-              <p className="text-[11px] text-[var(--text-3)]">
-                Reports lock after submission and cannot be edited.
-              </p>
+            <p className="mb-3 flex items-start gap-1.5 text-[12px] leading-relaxed text-[var(--text-2)]">
+              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--text-3)]" />
+              Reports lock after submission and cannot be edited.
+            </p>
+            <div className="flex md:justify-end">
               {submitted ? (
-                <div className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[var(--status-success)]">
+                <div className="inline-flex w-full items-center justify-center gap-1.5 text-[12px] font-medium text-[var(--status-success)] md:w-auto">
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   Submitted
                 </div>
               ) : (
                 <Button
+                  ref={submitBtnRef}
                   type="submit"
                   loading={loading}
                   size="md"
+                  className="min-h-[48px] w-full rounded-[12px] md:w-auto"
                 >
                   <Send className="h-3.5 w-3.5" />
                   Submit Report
@@ -375,6 +456,49 @@ export function DailyReportView({ report, date }: DailyReportViewProps) {
           </div>
         </form>
       )}
+
+      {/* ─── Submit confirm — Dry-run-free flow, same submit handler ─── */}
+      <Dialog
+        open={confirmOpen}
+        onOpenChange={(open) => {
+          if (!open) closeConfirm();
+        }}
+      >
+        <DialogContent className="max-w-md rounded-[20px]">
+          <DialogClose onClose={closeConfirm} />
+          <DialogHeader>
+            <DialogTitle>Submit today&apos;s report?</DialogTitle>
+            <DialogDescription>
+              Reports lock after submission and cannot be edited.
+            </DialogDescription>
+          </DialogHeader>
+          <dl className="space-y-2 px-6 text-[13px]">
+            <div className="flex gap-2">
+              <dt className="w-32 shrink-0 text-[var(--text-3)]">Contacted</dt>
+              <dd className="font-medium tabular-nums text-[var(--text-1)]">{leadsContacted}</dd>
+            </div>
+            <div className="flex gap-2">
+              <dt className="w-32 shrink-0 text-[var(--text-3)]">Appointments</dt>
+              <dd className="font-medium tabular-nums text-[var(--text-1)]">{appointmentsBooked}</dd>
+            </div>
+            <div className="flex gap-2">
+              <dt className="w-32 shrink-0 text-[var(--text-3)]">Deals closed</dt>
+              <dd className="font-medium tabular-nums text-[var(--text-1)]">{dealsClosed}</dd>
+            </div>
+          </dl>
+          {allZero && (
+            <p className="px-6 text-[12px] text-[var(--text-2)]">All values are 0.</p>
+          )}
+          <DialogFooter>
+            <Button variant="secondary" size="sm" onClick={closeConfirm}>
+              Cancel
+            </Button>
+            <Button size="sm" onClick={confirmSubmit}>
+              Submit report
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

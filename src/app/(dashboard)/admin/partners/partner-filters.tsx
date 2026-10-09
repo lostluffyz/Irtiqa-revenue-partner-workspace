@@ -103,16 +103,16 @@ export function PartnerFilters({
 
   return (
     <div className="space-y-3">
-      {/* Search + Region row */}
-      <Toolbar>
-        <ToolbarSearch>
+      {/* Search + Region row — wraps on small screens so the page never scrolls sideways */}
+      <Toolbar className="flex-wrap">
+        <ToolbarSearch className="max-sm:basis-full">
           <SearchInput
             ref={searchRef}
             value={search}
             onChange={handleSearchChange}
             onClear={() => { setSearch(""); applyFilters({ search: "" }); }}
             onSubmit={() => applyFilters()}
-            placeholder="Search partners by name, email, or ID..."
+            placeholder="Search partners"
           />
         </ToolbarSearch>
 
@@ -154,30 +154,32 @@ export function PartnerFilters({
       </Toolbar>
 
       {/* Status tabs + results count row */}
-      <div className="flex items-center justify-between">
-        <TabGroup
-          options={STATUS_OPTIONS.map((opt) => ({
-            ...opt,
-            count: opt.value === "all"
-              ? total
-              : opt.value === "active"
-                ? activeCount
-                : opt.value === "inactive"
-                  ? inactiveCount
-                  : opt.value === "suspended"
-                    ? suspendedCount
-                    : undefined,
-          }))}
-          value={status}
-          onChange={(v) => {
-            setStatus(v);
-            applyFilters({ status: v });
-          }}
-        />
+      <div className="flex items-center gap-3">
+        <div className="chip-row-fade min-w-0 flex-1 overflow-x-auto pb-1 -mx-1 px-1 [&>div]:w-max">
+          <TabGroup
+            options={STATUS_OPTIONS.map((opt) => ({
+              ...opt,
+              count: opt.value === "all"
+                ? total
+                : opt.value === "active"
+                  ? activeCount
+                  : opt.value === "inactive"
+                    ? inactiveCount
+                    : opt.value === "suspended"
+                      ? suspendedCount
+                      : undefined,
+            }))}
+            value={status}
+            onChange={(v) => {
+              setStatus(v);
+              applyFilters({ status: v });
+            }}
+          />
+        </div>
 
         {/* Results count */}
         {hasActiveFilters && (
-          <p className="dl-type-caption text-[var(--text-3)] tabular-nums shrink-0 ml-4">
+          <p className="dl-type-caption text-[var(--text-3)] tabular-nums shrink-0">
             {filteredCount} of {total}
           </p>
         )}

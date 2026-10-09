@@ -44,6 +44,12 @@ export function MobileAnnouncements({ announcements }: AnnouncementsProps) {
         <div className="mobile-empty">
           <Megaphone className="mobile-empty-icon" />
           <p className="mobile-empty-text">No announcements yet.</p>
+          <Link
+            href="/admin/announcements/new"
+            className="mt-3 inline-flex items-center justify-center gap-2 h-[32px] px-3 rounded-[8px] text-[13px] font-medium border border-[var(--border)] bg-[var(--surface)] text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)] transition-colors duration-150"
+          >
+            Post announcement
+          </Link>
         </div>
       ) : (
         <div className="mobile-section-body">

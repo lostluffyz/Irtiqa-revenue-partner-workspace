@@ -1,11 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Megaphone, Plus } from "lucide-react";
+import { Plus, Megaphone } from "lucide-react";
 import Link from "next/link";
 import { AnnouncementActions } from "./announcement-actions";
+import {
+  AnnouncementCard,
+  EmptyContentCard,
+  formatPostedDate,
+} from "@/components/cards/content-cards";
 
 async function getAnnouncements() {
   const supabase = await createClient();
@@ -30,8 +33,8 @@ export default async function AnnouncementsPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-start justify-between mb-8">
-        <div>
+      <div className="flex items-start justify-between gap-3 mb-8 max-sm:flex-col max-sm:items-stretch">
+        <div className="min-w-0 flex-1">
           <h1 className="text-[28px] font-bold tracking-[-0.025em] text-[var(--text-1)]">
             Announcements
           </h1>
@@ -39,70 +42,48 @@ export default async function AnnouncementsPage() {
             Publish updates and important information.
           </p>
         </div>
-        <Link href="/admin/announcements/new">
-          <Button size="sm">
-            <Plus className="h-3.5 w-3.5" />
-            New
-          </Button>
-        </Link>
+        {announcements.length > 0 && (
+          <Link href="/admin/announcements/new" className="shrink-0 max-sm:basis-full max-sm:mt-1">
+            <Button size="sm" className="whitespace-nowrap max-sm:min-h-[48px] max-sm:w-full">
+              <Plus className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">New announcement</span>
+              <span className="sm:hidden">New</span>
+            </Button>
+          </Link>
+        )}
       </div>
 
       {announcements.length === 0 ? (
-        <EmptyState
-          icon={<Megaphone className="h-6 w-6" />}
-          title="No announcements"
-          description="Create your first announcement for Revenue Partners"
+        <EmptyContentCard
+          icon={<Megaphone className="h-7 w-7" />}
+          title="No announcements yet"
+          body="Create your first announcement for your partners."
           action={
             <Link href="/admin/announcements/new">
-              <Button size="sm">
+              <Button size="sm" className="min-h-[44px]">
                 <Plus className="h-3.5 w-3.5" />
-                New Announcement
+                New announcement
               </Button>
             </Link>
           }
         />
       ) : (
-        <div className="surface">
-          {/* Table header */}
-          <div className="grid grid-cols-[1fr_auto_auto] gap-x-6 px-5 py-3 border-b border-[var(--border-subtle)] bg-[#FAFAF8] rounded-t-[10px]">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[var(--text-3)]">Title</span>
-            <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[var(--text-3)]">Date</span>
-            <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[var(--text-3)]">Actions</span>
-          </div>
-
-          {/* Rows */}
-          <div className="divide-y divide-[var(--border-subtle)]">
-            {announcements.map((announcement) => (
-              <div
-                key={announcement.id}
-                className="grid grid-cols-[1fr_auto_auto] gap-x-6 px-5 py-3.5 items-center transition-colors duration-120 hover:bg-[var(--hover-bg)]"
-              >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-[13px] font-medium text-[var(--text-1)] leading-snug truncate">
-                      {announcement.title}
-                    </p>
-                    {announcement.is_pinned && (
-                      <Badge variant="info">Pinned</Badge>
-                    )}
-                  </div>
-                  {announcement.content && (
-                    <p className="mt-0.5 text-[12px] text-[var(--text-3)] line-clamp-1">
-                      {announcement.content.replace(/\n/g, " ").substring(0, 120)}
-                    </p>
-                  )}
+        <div className="space-y-3">
+          {announcements.map((announcement) => (
+            <AnnouncementCard
+              key={announcement.id}
+              title={announcement.title}
+              content={announcement.content}
+              pinned={announcement.is_pinned}
+              postedLabel={`Posted ${formatPostedDate(announcement.created_at)}`}
+              postedTitle={announcement.created_at}
+              footer={
+                <div className="mt-3 flex items-center gap-1 border-t border-[var(--border-subtle)] pt-3">
+                  <AnnouncementActions id={announcement.id} />
                 </div>
-                <span className="text-[11px] text-[var(--text-3)] tabular-nums whitespace-nowrap">
-                  {new Date(announcement.created_at).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </span>
-                <AnnouncementActions id={announcement.id} />
-              </div>
-            ))}
-          </div>
+              }
+            />
+          ))}
         </div>
       )}
     </div>

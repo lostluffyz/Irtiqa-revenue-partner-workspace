@@ -28,6 +28,17 @@ export function MobilePipeline({ totalLeads, totalLeadsContacted, totalAppointme
           <ArrowRight className="h-3 w-3" />
         </Link>
       </div>
+      {Math.max(0, totalLeads - totalLeadsContacted) > 0 && (
+        <div className="px-5 sm:px-0">
+          <Link
+            href="/partner/leads?status=not_contacted"
+            className="mb-1 inline-flex items-center gap-1 text-[12px] font-medium text-[var(--accent)]"
+          >
+            {Math.max(0, totalLeads - totalLeadsContacted)} waiting for first contact
+            <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+      )}
 
       {totalLeads === 0 ? (
         <div className="mobile-section-body py-10 text-center">
@@ -48,7 +59,12 @@ export function MobilePipeline({ totalLeads, totalLeadsContacted, totalAppointme
                     : 0;
             const pct = totalLeads > 0 ? (count / totalLeads) * 100 : 0;
             return (
-              <div key={status} className="mobile-pipeline-row">
+              <Link
+                key={status}
+                href={`/partner/leads?status=${status}`}
+                aria-label={`${PIPELINE_LABELS[status]}: ${count} leads. View in My Leads.`}
+                className="mobile-pipeline-row min-h-[44px] focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-[-2px]"
+              >
                 <div className="mobile-pipeline-label">
                   <span className="mobile-pipeline-dot" style={{ backgroundColor: PIPELINE_COLORS[status] }} />
                   {PIPELINE_LABELS[status]}
@@ -60,7 +76,7 @@ export function MobilePipeline({ totalLeads, totalLeadsContacted, totalAppointme
                   />
                 </div>
                 <span className="mobile-pipeline-value">{count}</span>
-              </div>
+              </Link>
             );
           })}
         </div>

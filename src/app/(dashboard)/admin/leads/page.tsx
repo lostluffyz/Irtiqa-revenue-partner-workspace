@@ -151,7 +151,7 @@ export default async function LeadsPage({
           <div className="flex items-center gap-2">
             <LeadPageActions activePartners={activePartners} />
             <Link href="/admin/leads/upload">
-              <Button size="sm" variant="secondary" className="dl-press">
+              <Button size="sm" variant="secondary" className="dl-press min-h-[44px] md:min-h-0">
                 <Upload className="h-3.5 w-3.5" />
                 Upload CSV
               </Button>
@@ -163,10 +163,14 @@ export default async function LeadsPage({
       {/* ═══════════════════════════════════════════════════════════
           STATS ROW — Pure numbers, no icons (consistent with Partners)
           ═══════════════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 [&>*:last-child]:col-span-2 lg:[&>*:last-child]:col-span-1">
         <StatCard value={aggregateStats.total} label="Total" />
         <StatCard value={aggregateStats.total - aggregateStats.unassigned} label="Assigned" />
-        <StatCard value={aggregateStats.unassigned} label="Unassigned" />
+        <StatCard
+          value={aggregateStats.unassigned}
+          label="Unassigned"
+          valueClassName={aggregateStats.unassigned > 0 ? "text-[var(--status-warning)]" : ""}
+        />
         <StatCard value={aggregateStats.contacted} label="Contacted" />
         <StatCard value={aggregateStats.appointmentsBooked} label="Appt. Booked" />
       </div>

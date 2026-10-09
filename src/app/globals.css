@@ -27,10 +27,11 @@
   --surface: #FFFFFF;
   --surface-elevated: #FFFFFF;
 
-  /* Text Hierarchy */
+  /* Text Hierarchy — all three pass WCAG AA (4.5:1) on white surfaces.
+     text-1 17.7:1, text-2 4.8:1, text-3 5.4:1 (measured 2026-10-04). */
   --text-1: #111827;
   --text-2: #6B7280;
-  --text-3: #9CA3AF;
+  --text-3: #656B76;
 
   /* Borders */
   --border: #E5E7EB;
@@ -41,10 +42,12 @@
   --accent-hover: #1E40AF;
   --accent-light: #EFF6FF;
 
-  /* Status */
-  --status-success: #059669;
+  /* Status — text colors pass WCAG AA on white surfaces.
+     success 5.5:1, warning 5.0:1, danger 4.8:1 (measured 2026-10-04).
+     Green/amber/red are reserved strictly for status meaning. */
+  --status-success: #047857;
   --status-success-bg: #ECFDF5;
-  --status-warning: #D97706;
+  --status-warning: #B45309;
   --status-warning-bg: #FFFBEB;
   --status-danger: #DC2626;
   --status-danger-bg: #FEF2F2;
@@ -59,6 +62,12 @@
   --sidebar-bg: #FFFFFF;
   --sidebar-width: 240px;
   --sidebar-collapsed-width: 64px;
+
+  /* Floating admin sidebar + topbar (additive; existing sidebar tokens untouched) */
+  --sb-w-expanded: 252px;
+  --sb-w-collapsed: 72px;
+  --accent-tint: #E8EEFB;
+  --shadow-float: 0 1px 2px rgba(16,24,40,0.04), 0 8px 30px rgba(16,24,40,0.06);
 
   /* ══════════════════════════════════════════════════════════════
      Design Language — Foundation Tokens
@@ -85,6 +94,21 @@
   --radius-sm: 6px;                           /* Buttons, inputs, badges */
   --radius-md: 8px;                           /* Cards, panels, dropdowns */
   --radius-lg: 12px;                          /* Modals, page containers */
+
+  /* Soft Radius — partner leads + lead drawer only.
+     Do NOT apply to shared admin primitives (Button/Card/Input/Badge/Table). */
+  --radius-soft-xs: 6px;                      /* tiny chips, ticks */
+  --radius-soft-sm: 10px;                     /* inputs, buttons, selects */
+  --radius-soft-md: 12px;                     /* avatars, controls, notes */
+  --radius-soft-lg: 18px;                     /* cards and list rows */
+  --radius-soft-xl: 24px;                     /* drawer, bottom sheet top */
+  --radius-soft-dialog: 20px;                 /* dialogs */
+  --radius-soft-pill: 9999px;                 /* chips, status pills */
+
+  /* Soft Shadows — partner leads + lead drawer only */
+  --shadow-soft: 0 1px 2px rgba(16,24,40,.04);    /* resting */
+  --shadow-lift: 0 4px 14px rgba(16,24,40,.08);   /* hover / raised */
+  --shadow-drawer: 0 12px 40px rgba(16,24,40,.18); /* drawer panel */
 
   /* Elevation System — 5 levels */
   --shadow-0: none;                           /* Flat */
@@ -145,6 +169,31 @@ body {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Floating admin topbar
+   ══════════════════════════════════════════════════════════════ */
+.app-topbar {
+  background: var(--surface);
+}
+@supports (background: color-mix(in srgb, red 50%, blue)) {
+  .app-topbar {
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Admin sidebar nav — thin scrollbar + rail tooltip
+   ══════════════════════════════════════════════════════════════ */
+.app-nav-scroll {
+  scrollbar-width: thin;
+}
+
+.app-tip {
+  transition: opacity 150ms ease;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -649,22 +698,24 @@ body {
 .lead-preview-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   z-index: 100;
   animation: fadeIn 150ms ease-out;
 }
 
 .lead-preview-panel {
   position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
+  top: 12px;
+  right: 12px;
+  bottom: 12px;
   width: 560px;
-  max-width: 100vw;
+  max-width: calc(100vw - 24px);
   background: var(--surface);
-  border-left: 1px solid var(--border);
-  box-shadow: var(--shadow-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-soft-xl);
+  box-shadow: var(--shadow-drawer);
   z-index: 101;
   animation: slideInRight 200ms cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
@@ -681,6 +732,50 @@ body {
 @media (min-width: 769px) and (max-width: 1024px) {
   .lead-preview-panel {
     width: 500px;
+  }
+}
+
+/* Mobile: proper bottom sheet — full width, rounded top, internal scroll */
+@media (max-width: 767px) {
+  .lead-preview-panel {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: 100vw;
+    max-height: 92dvh;
+    border-radius: var(--radius-soft-xl) var(--radius-soft-xl) 0 0;
+    border-bottom: none;
+    animation: slideUpSheet 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+@keyframes slideUpSheet {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDownSheet {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+@media (max-width: 767px) {
+  .drawer-closing .lead-preview-panel {
+    animation: slideDownSheet 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 }
 
@@ -1615,6 +1710,9 @@ body {
   .login-loading-overlay { animation: none !important; }
   .route-progress-container { animation: none !important; }
   .route-progress-bar { transition: none !important; }
+  .app-sidebar, .app-sidebar * { transition: none !important; }
+  .app-tip { animation: none !important; }
+  .pulse-dot { animation: none !important; }
   .btn-hover-lift { transition: none !important; }
   .btn-hover-lift:hover:not(:disabled) { transform: none !important; }
   .btn-hover-lift:active:not(:disabled) { transform: none !important; }
@@ -1733,18 +1831,23 @@ body {
     left: 0;
     bottom: 0;
     z-index: 51;
-    width: min(280px, 85vw);
+    width: min(86vw, 300px);
     background: var(--surface);
     border-right: 1px solid var(--border);
     box-shadow: var(--shadow-4);
     transform: translateX(-100%);
-    transition: transform 300ms cubic-bezier(0.32, 0.72, 0, 1);
+    visibility: hidden;
+    transition:
+      transform 300ms cubic-bezier(0.32, 0.72, 0, 1),
+      visibility 0s linear 300ms;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
 
   .mobile-sidebar.is-open {
     transform: translateX(0);
+    visibility: visible;
+    transition: transform 300ms cubic-bezier(0.32, 0.72, 0, 1);
   }
 
   /* ── Mobile Content Padding ── */
@@ -1753,6 +1856,21 @@ body {
     padding-left: 20px;
     padding-right: 20px;
     padding-bottom: 40px;
+  }
+
+  /* ── Partner tab-bar clearance (mobile only) ──
+     64px bar + 12px inset + 16px breathing room + safe area.
+     Declared after .mobile-content-pad so it wins for the bottom edge. */
+  .tabbar-clearance {
+    padding-bottom: calc(104px + env(safe-area-inset-bottom));
+  }
+
+  /* ── Partner top offset (mobile only) ──
+     The floating hamburger is gone on partner mobile, so the 78px
+     reserved top space becomes 20px + safe area. Admin keeps its own
+     offset because its floating button is still there. */
+  .partner-top-pad {
+    padding-top: calc(20px + env(safe-area-inset-top, 0px));
   }
 
   /* ── Micro-interactions ── */
@@ -1983,6 +2101,39 @@ body {
     text-align: right;
   }
 
+  .mobile-report-stat-value,
+  .mobile-report-stat-label {
+    display: block;
+  }
+
+  /* Chip row edge fade — hints horizontal scroll without clipping the page */
+  .chip-row-fade {
+    mask-image: linear-gradient(to right, black 0, black calc(100% - 28px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black 0, black calc(100% - 28px), transparent 100%);
+    scrollbar-width: none;
+  }
+  .chip-row-fade::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Running-job pulse dot — opacity only, text is never affected;
+     fully static under prefers-reduced-motion. */
+  @keyframes pulseDot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+  .pulse-dot {
+    animation: pulseDot 1.6s ease-in-out infinite;
+  }
+
+  /* Industry subtitle hides once the Industry column itself is visible (≥1500px).
+     Plain unlayered rule so it deterministically beats the sm:inline utility. */
+  @media (min-width: 1500px) {
+    .industry-subtitle {
+      display: none;
+    }
+  }
+
   .mobile-report-stat-value {
     font-size: 14px;
     font-weight: 600;
@@ -2205,7 +2356,7 @@ body {
   .mobile-progress-bar-fill {
     height: 100%;
     border-radius: 4px;
-    background: linear-gradient(90deg, var(--accent), var(--status-success));
+    background: var(--accent);
     transition: width 600ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 

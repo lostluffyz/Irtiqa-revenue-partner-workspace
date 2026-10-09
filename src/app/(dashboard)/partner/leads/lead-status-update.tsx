@@ -26,23 +26,23 @@ const STATUS_LABELS: Record<string, string> = Object.fromEntries(
 );
 
 const STATUS_STYLES: Record<string, string> = {
-  not_contacted: "bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]",
-  contacted: "bg-[#EFF6FF] text-[#1A56DB] hover:bg-[#DBEAFE]",
-  follow_up_required: "bg-[#FFFBEB] text-[#D97706] hover:bg-[#FEF3C7]",
-  appointment_booked: "bg-[#ECFDF5] text-[#059669] hover:bg-[#D1FAE5]",
-  closed: "bg-[#D1FAE5] text-[#047857] hover:bg-[#A7F3D0]",
-  not_interested: "bg-[#FEF2F2] text-[#DC2626] hover:bg-[#FEE2E2]",
-  invalid_contact: "bg-[#FEF2F2] text-[#DC2626] hover:bg-[#FEE2E2]",
+  not_contacted: "bg-[var(--hover-bg)] text-[var(--text-2)] hover:bg-[var(--border-subtle)]",
+  contacted: "bg-[var(--accent-light)] text-[var(--accent)] hover:bg-[var(--accent-light)]",
+  follow_up_required: "bg-[var(--status-warning-bg)] text-[var(--status-warning)] hover:bg-[var(--status-warning-bg)]",
+  appointment_booked: "bg-[var(--status-success-bg)] text-[var(--status-success)] hover:bg-[var(--status-success-bg)]",
+  closed: "bg-[var(--status-success-bg)] text-[var(--status-success)] hover:bg-[var(--status-success-bg)]",
+  not_interested: "bg-[var(--status-danger-bg)] text-[var(--status-danger)] hover:bg-[var(--status-danger-bg)]",
+  invalid_contact: "bg-[var(--status-danger-bg)] text-[var(--status-danger)] hover:bg-[var(--status-danger-bg)]",
 };
 
 const STATUS_DOT_COLORS: Record<string, string> = {
-  not_contacted: "bg-[#9CA3AF]",
-  contacted: "bg-[#3B82F6]",
-  follow_up_required: "bg-[#F59E0B]",
-  appointment_booked: "bg-[#10B981]",
-  closed: "bg-[#059669]",
-  not_interested: "bg-[#EF4444]",
-  invalid_contact: "bg-[#EF4444]",
+  not_contacted: "bg-[var(--text-3)]",
+  contacted: "bg-[var(--accent)]",
+  follow_up_required: "bg-[var(--status-warning)]",
+  appointment_booked: "bg-[var(--status-success)]",
+  closed: "bg-[var(--status-success)]",
+  not_interested: "bg-[var(--status-danger)]",
+  invalid_contact: "bg-[var(--status-danger)]",
 };
 
 // ============================================
@@ -113,10 +113,10 @@ export function StatusBadge({ lead }: { lead: Lead }) {
   }, [isOpen]);
 
   const label = STATUS_LABELS[lead.status] || lead.status;
-  const dotColor = STATUS_DOT_COLORS[lead.status] || "bg-[#9CA3AF]";
+  const dotColor = STATUS_DOT_COLORS[lead.status] || "bg-[var(--text-3)]";
   const styles = STATUS_STYLES[lead.status] || STATUS_STYLES.not_contacted;
 
-  // Compute popover position from trigger
+  // Compute popover position from trigger (same width as the trigger)
   const [popoverStyle, setPopoverStyle] = useState<React.CSSProperties>({});
   useEffect(() => {
     if (!isOpen || !triggerRef.current) return;
@@ -125,6 +125,7 @@ export function StatusBadge({ lead }: { lead: Lead }) {
       position: "fixed",
       top: rect.bottom + 4,
       right: window.innerWidth - rect.right,
+      width: rect.width,
       zIndex: 200,
     });
   }, [isOpen]);
@@ -157,11 +158,11 @@ export function StatusBadge({ lead }: { lead: Lead }) {
           <div
             ref={popoverRef}
             style={popoverStyle}
-            className="w-48 py-1 bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-md)] shadow-[var(--shadow-3)] dl-dropdown-enter"
+            className="py-1 bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-soft-md)] shadow-[var(--shadow-3)] dl-dropdown-enter"
           >
             {STATUS_OPTIONS.map((opt) => {
               const isActive = lead.status === opt.value;
-              const optDot = STATUS_DOT_COLORS[opt.value] || "bg-[#9CA3AF]";
+              const optDot = STATUS_DOT_COLORS[opt.value] || "bg-[var(--text-3)]";
               return (
                 <button
                   key={opt.value}
@@ -169,7 +170,7 @@ export function StatusBadge({ lead }: { lead: Lead }) {
                   onClick={() => handleStatusChange(opt.value)}
                   disabled={updating}
                   className={`
-                    w-full flex items-center gap-2 px-3 py-2 text-[12px]
+                    w-full flex items-center gap-2 px-3 min-h-[44px] py-2 text-[12px]
                     hover:bg-[var(--hover-bg)] transition-colors duration-150
                     ${isActive ? "font-medium text-[var(--text-1)]" : "text-[var(--text-2)]"}
                     disabled:opacity-50

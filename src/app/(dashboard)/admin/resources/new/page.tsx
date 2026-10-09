@@ -5,9 +5,17 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormError } from "@/components/ui/form-error";
-import { ArrowLeft } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
+import { ArrowLeft, FileText, Link2, PlayCircle, HelpCircle } from "lucide-react";
 import Link from "next/link";
 import { createResourceAction } from "../actions";
+
+const RESOURCE_TYPES = [
+  { value: "document", label: "Document", icon: FileText },
+  { value: "link", label: "Link", icon: Link2 },
+  { value: "video", label: "Video", icon: PlayCircle },
+  { value: "faq", label: "FAQ", icon: HelpCircle },
+] as const;
 
 export default function NewResourcePage() {
   const router = useRouter();
@@ -44,7 +52,7 @@ export default function NewResourcePage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-[720px]">
       <Link
         href="/admin/resources"
         className="inline-flex items-center gap-1 text-[13px] text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors duration-150 mb-6"
@@ -53,24 +61,37 @@ export default function NewResourcePage() {
         Back to Resources
       </Link>
 
-      <h1 className="text-[28px] font-bold tracking-[-0.02em] text-[var(--text-1)] mb-6">
-        Add Resource
-      </h1>
+      <PageHeader
+        title="Add Resource"
+        description="Share a guide, link, video or FAQ with your partners."
+      />
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {error && <FormError message={error} />}
+      <form
+        onSubmit={handleSubmit}
+        className="mt-6 rounded-[18px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow-soft)] max-md:p-4 space-y-5"
+      >
+        {error && (
+          <div role="alert">
+            <FormError message={error} />
+          </div>
+        )}
 
-        <Input
-          label="Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-          placeholder="e.g., Revenue Partner Guide"
-          maxLength={300}
-        />
+        <div>
+          <Input
+            label="Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+            placeholder="e.g., Revenue Partner Guide"
+            maxLength={300}
+          />
+          <p className="mt-1 text-right text-[11px] tabular-nums text-[var(--text-3)]">
+            {title.length} / 300
+          </p>
+        </div>
 
         <div className="space-y-1.5">
-          <label className="block text-[12px] font-semibold text-[var(--text-2)]">
+          <label className="block text-[13px] font-medium text-[var(--text-2)]">
             Description (optional)
           </label>
           <textarea
@@ -78,24 +99,45 @@ export default function NewResourcePage() {
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
             placeholder="Brief description of this resource"
-            className="input-field min-h-[80px] text-[13px]"
+            className="input-field min-h-[160px] text-[13px]"
           />
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-[12px] font-semibold text-[var(--text-2)]">
+          <span id="new-resource-type-label" className="block text-[13px] font-medium text-[var(--text-2)]">
             Type
-          </label>
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-            className="input-field text-[13px]"
+          </span>
+          <div
+            role="radiogroup"
+            aria-labelledby="new-resource-type-label"
+            className="flex flex-wrap gap-2"
           >
-            <option value="document">Document</option>
-            <option value="link">Link</option>
-            <option value="video">Video</option>
-            <option value="faq">FAQ</option>
-          </select>
+            {RESOURCE_TYPES.map((t) => {
+              const active = type === t.value;
+              const Icon = t.icon;
+              return (
+                <label
+                  key={t.value}
+                  className={`inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-full border px-4 text-[13px] font-medium transition-colors duration-150 focus-within:outline-2 focus-within:outline-[var(--accent)] focus-within:outline-offset-2 ${
+                    active
+                      ? "border-transparent bg-[var(--text-1)] text-white"
+                      : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)]"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="type"
+                    value={t.value}
+                    checked={active}
+                    onChange={() => setType(t.value)}
+                    className="sr-only"
+                  />
+                  <Icon className="h-3.5 w-3.5" />
+                  {t.label}
+                </label>
+              );
+            })}
+          </div>
         </div>
 
         <Input
@@ -112,24 +154,44 @@ export default function NewResourcePage() {
           onChange={(e) => setSortOrder(parseInt(e.target.value) || 0)}
         />
 
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={isActive}
-            onChange={(e) => setIsActive(e.target.checked)}
-            className="rounded border-[var(--border)] text-[var(--accent)] focus:ring-[var(--focus-ring)]"
-          />
-          <span className="text-[13px] text-[var(--text-2)]">
-            Active (visible to partners)
-          </span>
-        </label>
+        <div className="space-y-1.5">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={isActive}
+            aria-label="Resource visible to partners"
+            onClick={() => setIsActive((v) => !v)}
+            className="flex min-h-[44px] items-center gap-3"
+          >
+            <span
+              aria-hidden="true"
+              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-150 ${
+                isActive ? "bg-[var(--accent)]" : "bg-[var(--border)]"
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-150 ${
+                  isActive ? "translate-x-6" : "translate-x-1"
+                }`}
+              />
+            </span>
+            <span className="text-left">
+              <span className="block text-[13px] font-medium text-[var(--text-1)]">
+                Visible to partners
+              </span>
+              <span className="block text-[12px] text-[var(--text-3)]">
+                Hidden resources are not shown to partners.
+              </span>
+            </span>
+          </button>
+        </div>
 
         <div className="flex items-center gap-3 pt-2">
-          <Button type="submit" loading={loading} className="flex-1">
-            Create Resource
+          <Button type="submit" loading={loading} className="flex-1 min-h-[44px]">
+            Add resource
           </Button>
           <Link href="/admin/resources">
-            <Button type="button" variant="secondary">
+            <Button type="button" variant="secondary" className="min-h-[44px]">
               Cancel
             </Button>
           </Link>

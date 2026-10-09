@@ -4,6 +4,7 @@ import {
   getBusinessDate,
   PROGRAM_DURATION_DAYS,
 } from "@/lib/program-timezone";
+import { getProgressMilestoneCopy } from "@/components/dashboard/helpers";
 import {
   TrendingUp,
   TrendingDown,
@@ -11,11 +12,13 @@ import {
   Target,
   CheckCircle2,
   ArrowUpRight,
+  ArrowRight,
   BarChart3,
   CalendarCheck,
   Milestone,
 } from "lucide-react";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import type { Lead } from "@/types/database";
 
 // ============================================
@@ -41,7 +44,7 @@ const PIPELINE_STATUSES = [
   { key: "contacted", label: "Contacted", color: "bg-[var(--accent)]" },
   { key: "follow_up_required", label: "Follow Up", color: "bg-[var(--status-warning)]" },
   { key: "appointment_booked", label: "Appointments", color: "bg-[var(--status-success)]" },
-  { key: "closed", label: "Closed", color: "bg-emerald-700" },
+  { key: "closed", label: "Closed", color: "bg-[var(--status-success)]" },
 ];
 
 // ============================================
@@ -143,8 +146,7 @@ export default async function PartnerProgressPage() {
   const hasLeads = totalLeads > 0;
 
   // ── Milestone ──
-  const milestones = [25, 50, 75, 100] as const;
-  const currentMilestone = milestones.find((m) => progressPct >= m) ?? null;
+  const milestoneCopy = getProgressMilestoneCopy(programDay, PROGRAM_DURATION_DAYS);
 
   // ============================================
   // Render
@@ -164,7 +166,7 @@ export default async function PartnerProgressPage() {
       </div>
 
       {/* ═══ Program Status Bar ═══ */}
-      <div className="mb-8">
+      <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)] mb-8">
         <div className="flex items-center justify-between mb-2.5">
           <div className="flex items-center gap-3">
             <span className="text-[13px] font-semibold text-[var(--text-1)] tabular-nums">
@@ -177,7 +179,7 @@ export default async function PartnerProgressPage() {
           <div className="flex items-center gap-3">
             {streak > 0 && (
               <span className="inline-flex items-center gap-1 text-[12px] font-medium text-[var(--text-2)]">
-                <Flame className="h-3.5 w-3.5 text-[#F59E0B]" />
+                <Flame className="h-3.5 w-3.5 text-[var(--status-warning)]" />
                 {streak} day{streak !== 1 ? "s" : ""}
               </span>
             )}
@@ -186,17 +188,48 @@ export default async function PartnerProgressPage() {
             </span>
           </div>
         </div>
-        <div className="h-1.5 w-full rounded-full bg-[var(--border-subtle)]">
+        <div className="relative mb-1.5 h-3 text-[10px] text-[var(--text-3)] tabular-nums" aria-hidden="true">
+          <span className="absolute -translate-x-1/2" style={{ left: `${(1 / PROGRAM_DURATION_DAYS) * 100}%` }}>Day 1</span>
+          <span className="absolute -translate-x-1/2" style={{ left: `${(10 / PROGRAM_DURATION_DAYS) * 100}%` }}>Day 10</span>
+          <span className="absolute -translate-x-1/2" style={{ left: `${(20 / PROGRAM_DURATION_DAYS) * 100}%` }}>Day 20</span>
+          <span className="absolute right-0">Day 30</span>
+        </div>
+        <div
+          className="relative h-2 w-full rounded-full bg-[var(--border-subtle)]"
+          role="progressbar"
+          aria-valuenow={programDay}
+          aria-valuemin={0}
+          aria-valuemax={PROGRAM_DURATION_DAYS}
+          aria-label={`Program progress: day ${programDay} of ${PROGRAM_DURATION_DAYS}`}
+        >
           <div
-            className="h-1.5 rounded-full bg-[var(--accent)] transition-all duration-700"
+            className="h-2 rounded-full bg-[var(--accent)] transition-all duration-700"
             style={{ width: `${progressPct}%` }}
           />
+          <div
+            className="absolute top-1/2 h-2.5 w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--text-3)]"
+            style={{ left: `${(1 / PROGRAM_DURATION_DAYS) * 100}%` }}
+            aria-hidden="true"
+          />
+          <div
+            className="absolute top-1/2 h-2.5 w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--text-3)]"
+            style={{ left: `${(10 / PROGRAM_DURATION_DAYS) * 100}%` }}
+            aria-hidden="true"
+          />
+          <div
+            className="absolute top-1/2 h-2.5 w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--text-3)]"
+            style={{ left: `${(20 / PROGRAM_DURATION_DAYS) * 100}%` }}
+            aria-hidden="true"
+          />
+          <div
+            className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[var(--accent)]"
+            style={{ left: `${Math.min(100, (programDay / PROGRAM_DURATION_DAYS) * 100)}%` }}
+            title={`Today: Day ${programDay}`}
+          />
         </div>
-        {currentMilestone && currentMilestone < PROGRAM_DURATION_DAYS && (
-          <p className="mt-2 text-[11px] text-[var(--status-success)] font-medium">
-            {currentMilestone === 25 && "Quarter of the way there"}
-            {currentMilestone === 50 && "Halfway through the program"}
-            {currentMilestone === 75 && "Three quarters complete"}
+        {milestoneCopy && (
+          <p className="mt-2 text-[11px] text-[var(--text-2)] font-medium">
+            {milestoneCopy}
           </p>
         )}
       </div>
@@ -206,29 +239,32 @@ export default async function PartnerProgressPage() {
         <div className="flex items-center gap-2 mb-4">
           <BarChart3 className="h-3.5 w-3.5 text-[var(--text-3)]" />
           <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-3)]">
-            Daily Averages
+            Averages Per Report
           </p>
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <PerformanceCard
             icon={Target}
-            iconBg="bg-[var(--accent)]/10 text-[var(--accent)]"
+            iconBg="bg-[var(--hover-bg)] text-[var(--text-2)]"
             value={avgContacted}
-            label="Leads / day"
+            label="Contacted"
+            caption={`avg per report · across ${totalReports} report${totalReports !== 1 ? "s" : ""}`}
             trend={hasReports ? contactedTrend : null}
           />
           <PerformanceCard
             icon={CalendarCheck}
-            iconBg="bg-emerald-50 text-emerald-600"
+            iconBg="bg-[var(--hover-bg)] text-[var(--text-2)]"
             value={avgAppointments}
-            label="Appointments / day"
+            label="Appointments"
+            caption={`avg per report · across ${totalReports} report${totalReports !== 1 ? "s" : ""}`}
             trend={hasReports ? apptsTrend : null}
           />
           <PerformanceCard
             icon={CheckCircle2}
-            iconBg="bg-emerald-50 text-emerald-700"
+            iconBg="bg-[var(--hover-bg)] text-[var(--text-2)]"
             value={avgDeals}
-            label="Deals / day"
+            label="Deals"
+            caption={`avg per report · across ${totalReports} report${totalReports !== 1 ? "s" : ""}`}
             trend={hasReports ? dealsTrend : null}
           />
         </div>
@@ -277,7 +313,7 @@ export default async function PartnerProgressPage() {
               <FunnelRow
                 label="Appointments"
                 count={totalAppointments}
-                accentColor="bg-emerald-500"
+                accentColor="bg-[var(--status-success)]"
                 conversion={
                   totalAppointments > 0
                     ? {
@@ -290,7 +326,7 @@ export default async function PartnerProgressPage() {
               <FunnelRow
                 label="Closed"
                 count={totalDeals}
-                accentColor="bg-emerald-700"
+                accentColor="bg-[var(--status-success)]"
                 conversion={null}
                 isBottom
               />
@@ -329,56 +365,53 @@ export default async function PartnerProgressPage() {
 
           {activeLeads > 0 ? (
             <div className="surface p-5">
-              {/* Stacked bar */}
-              <div className="flex h-2.5 w-full rounded-full overflow-hidden bg-[var(--border-subtle)] mb-4">
-                {PIPELINE_STATUSES.map(({ key, color }) => {
-                  const count = statusBreakdown[key] || 0;
-                  if (count === 0) return null;
-                  const width = (count / activeLeads) * 100;
-                  return (
-                    <div
-                      key={key}
-                      className={`${color} transition-all duration-500`}
-                      style={{ width: `${width}%` }}
-                    />
-                  );
-                })}
-              </div>
-
-              {/* Legend */}
-              <div className="space-y-2.5">
+              <div className="space-y-1">
                 {PIPELINE_STATUSES.map(({ key, label, color }) => {
                   const count = statusBreakdown[key] || 0;
                   if (count === 0) return null;
                   const pct = Math.round((count / activeLeads) * 100);
                   return (
-                    <div key={key} className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full shrink-0 ${color}`} />
-                        <span className="text-[12px] text-[var(--text-2)]">{label}</span>
-                      </div>
-                      <span className="text-[12px] font-semibold text-[var(--text-1)] tabular-nums">
+                    <Link
+                      key={key}
+                      href={`/partner/leads?status=${key}`}
+                      aria-label={`${label}: ${count} leads. View in My Leads.`}
+                      className="group flex items-center gap-3 rounded-[8px] px-2 -mx-2 py-1.5 transition-colors duration-150 hover:bg-[var(--hover-bg)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-[-2px]"
+                    >
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${color}`} />
+                      <span className="text-[12px] text-[var(--text-2)] group-hover:text-[var(--text-1)] min-w-0 flex-1 truncate">{label}</span>
+                      <span className="text-[12px] font-semibold text-[var(--text-1)] tabular-nums whitespace-nowrap">
                         {count}{" "}
                         <span className="font-normal text-[var(--text-3)]">({pct}%)</span>
                       </span>
-                    </div>
+                    </Link>
                   );
                 })}
               </div>
 
               {/* Contextual insight */}
               {(statusBreakdown.follow_up_required || 0) > 0 && (
-                <div className="mt-4 pt-3 border-t border-[var(--border-subtle)]">
+                <div className="mt-3 pt-3 border-t border-[var(--border-subtle)]">
                   <p className="text-[11px] text-[var(--status-warning)] font-medium">
                     {statusBreakdown.follow_up_required} lead{statusBreakdown.follow_up_required !== 1 ? "s" : ""} waiting for follow-up
                   </p>
                 </div>
               )}
             </div>
+          ) : (statusBreakdown.not_contacted || 0) > 0 ? (
+            <div className="surface flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-3.5">
+              <p className="text-[13px] text-[var(--text-2)]">No leads in progress yet.</p>
+              <Link
+                href="/partner/leads?status=not_contacted"
+                className="group inline-flex items-center gap-1 text-[12px] font-medium text-[var(--accent)] hover:underline focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2 rounded-[4px]"
+              >
+                {statusBreakdown.not_contacted} waiting for first contact
+                <ArrowRight className="h-3 w-3 transition-transform duration-150 group-hover:translate-x-0.5" />
+              </Link>
+            </div>
           ) : (
             <div className="surface p-8 text-center">
               <p className="text-[13px] text-[var(--text-3)]">
-                No active leads in pipeline.
+                No active leads in pipeline yet.
               </p>
             </div>
           )}
@@ -397,20 +430,37 @@ function PerformanceCard({
   iconBg,
   value,
   label,
+  caption,
   trend,
 }: {
   icon: React.ElementType;
   iconBg: string;
   value: string;
   label: string;
+  caption?: string;
   trend: { pct: number; direction: "up" | "down" | "neutral"; isNew?: boolean } | null;
 }) {
   return (
-    <div className="surface p-4">
-      <div className="flex items-center justify-between mb-3">
-        <div className={`w-7 h-7 rounded-[8px] flex items-center justify-center ${iconBg}`}>
+    <div className="surface flex items-center gap-3 p-4 sm:block">
+      <div className="flex min-w-0 flex-1 items-center gap-3 sm:mb-3 sm:block sm:flex-none">
+        <div className={`hidden h-7 w-7 items-center justify-center rounded-[8px] sm:flex ${iconBg}`}>
           <Icon className="h-3.5 w-3.5" />
         </div>
+        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] sm:hidden ${iconBg}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+        <div className="min-w-0 sm:mt-3">
+          <p className="truncate text-[14px] font-semibold text-[var(--text-1)] sm:mt-1.5 sm:text-[12px] sm:font-medium sm:text-[var(--text-3)]">
+            {label}
+          </p>
+          {caption && (
+            <p className="mt-0.5 truncate text-[12px] text-[var(--text-3)] tabular-nums sm:text-[11px]">
+              {caption}
+            </p>
+          )}
+        </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
         {trend && trend.direction !== "neutral" && (trend.pct > 0 || trend.isNew) && (
           <span
             className={`inline-flex items-center gap-0.5 text-[11px] font-medium tabular-nums ${
@@ -425,13 +475,10 @@ function PerformanceCard({
             {trend.isNew ? "New" : `${trend.pct}%`}
           </span>
         )}
+        <p className="text-[24px] font-bold leading-none tracking-[-0.02em] text-[var(--text-1)] tabular-nums">
+          {value}
+        </p>
       </div>
-      <p className="text-[24px] font-bold leading-none tracking-[-0.02em] text-[var(--text-1)] tabular-nums">
-        {value}
-      </p>
-      <p className="mt-1.5 text-[12px] font-medium text-[var(--text-3)]">
-        {label}
-      </p>
     </div>
   );
 }

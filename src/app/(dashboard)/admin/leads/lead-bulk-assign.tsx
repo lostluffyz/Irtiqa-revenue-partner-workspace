@@ -73,7 +73,7 @@ export function LeadsBulkAssign({
             <Button
               size="sm"
               onClick={() => setAssignDialogOpen(true)}
-              className="h-[30px] text-[12px]"
+              className="h-[30px] min-h-[44px] text-[12px] md:min-h-0"
             >
               <Sparkles className="h-3.5 w-3.5" />
               Assign Leads
@@ -82,7 +82,7 @@ export function LeadsBulkAssign({
               size="sm"
               variant="ghost"
               onClick={() => setSelectedIds(new Set())}
-              className="h-[30px] text-[12px]"
+              className="h-[30px] min-h-[44px] text-[12px] md:min-h-0"
             >
               Clear
             </Button>

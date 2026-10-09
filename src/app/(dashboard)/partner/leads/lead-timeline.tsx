@@ -1,6 +1,5 @@
 "use client";
 
-import { UserPlus, ArrowRightLeft, CheckCircle2 } from "lucide-react";
 import type { StatusHistoryEntry } from "../actions";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -46,20 +45,7 @@ function formatFullDate(dateStr: string): string {
 
 function getTimelineDotColor(action: string): string {
   if (action === "assigned") return "bg-[var(--accent)]";
-  if (action === "status_change") return "bg-purple-500";
   return "bg-[var(--text-3)]";
-}
-
-function getTimelineIcon(action: string) {
-  if (action === "assigned") return <UserPlus className="h-3 w-3" />;
-  if (action === "status_change") return <ArrowRightLeft className="h-3 w-3" />;
-  return <CheckCircle2 className="h-3 w-3" />;
-}
-
-function getIconBg(action: string): string {
-  if (action === "assigned") return "bg-[var(--accent)]/10 text-[var(--accent)]";
-  if (action === "status_change") return "bg-purple-500/10 text-purple-600";
-  return "bg-[var(--hover-bg)] text-[var(--text-3)]";
 }
 
 interface TimelineEvent {
@@ -121,14 +107,10 @@ export function LeadTimeline({ assignedAt, statusHistory }: LeadTimelineProps) {
             key={event.id}
             className="relative flex items-start gap-2.5 py-2"
           >
-            {/* Dot with icon */}
+            {/* Dot */}
             <div
-              className={`absolute -left-6 top-[8px] flex h-[18px] w-[18px] items-center justify-center rounded-full border-[1.5px] border-[var(--surface)] ${getTimelineDotColor(event.action)}`}
-            >
-              <span className={`flex items-center justify-center ${getIconBg(event.action)} w-[11px] h-[11px] rounded-full`}>
-                {getTimelineIcon(event.action)}
-              </span>
-            </div>
+              className={`absolute -left-6 top-[13px] h-2 w-2 rounded-full shrink-0 ${getTimelineDotColor(event.action)}`}
+            />
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2">

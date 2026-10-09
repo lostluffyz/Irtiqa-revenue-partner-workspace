@@ -7,10 +7,13 @@ import {
   Globe,
   Mail,
   Phone,
-  Building2,
   MapPin,
   ChevronDown,
   Check,
+  CalendarCheck,
+  X,
+  AlertTriangle,
+  Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { updateLeadStatusAction } from "../actions";
@@ -34,46 +37,57 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_OPTIONS = [
-  { value: "not_contacted", label: "Not Contacted", dot: "bg-[#9CA3AF]" },
-  { value: "contacted", label: "Contacted", dot: "bg-[#3B82F6]" },
-  { value: "follow_up_required", label: "Follow Up Required", dot: "bg-[#F59E0B]" },
-  { value: "appointment_booked", label: "Appointment Booked", dot: "bg-[#10B981]" },
-  { value: "closed", label: "Closed", dot: "bg-[#059669]" },
-  { value: "not_interested", label: "Not Interested", dot: "bg-[#EF4444]" },
-  { value: "invalid_contact", label: "Invalid Contact", dot: "bg-[#EF4444]" },
-];
-
-const STATUS_STYLES: Record<string, string> = {
-  not_contacted: "bg-[#F3F4F6] text-[#6B7280]",
-  contacted: "bg-[#EFF6FF] text-[#1A56DB]",
-  follow_up_required: "bg-[#FFFBEB] text-[#D97706]",
-  appointment_booked: "bg-[#ECFDF5] text-[#059669]",
-  closed: "bg-[#D1FAE5] text-[#047857]",
-  not_interested: "bg-[#FEF2F2] text-[#DC2626]",
-  invalid_contact: "bg-[#FEF2F2] text-[#DC2626]",
-};
+  { value: "not_contacted", label: "Not Contacted", dot: "bg-[var(--text-3)]" },
+  { value: "contacted", label: "Contacted", dot: "bg-[var(--accent)]" },
+  { value: "follow_up_required", label: "Follow Up Required", dot: "bg-[var(--status-warning)]" },
+  { value: "appointment_booked", label: "Appointment Booked", dot: "bg-[var(--status-success)]", icon: "calendar" },
+  { value: "closed", label: "Closed", dot: "bg-[var(--status-success)]", icon: "check" },
+  { value: "not_interested", label: "Not Interested", dot: "bg-[var(--status-danger)]", icon: "x" },
+  { value: "invalid_contact", label: "Invalid Contact", dot: "bg-[var(--status-danger)]", icon: "alert" },
+] as const;
 
 const STATUS_DOT_COLORS: Record<string, string> = {
-  not_contacted: "bg-[#9CA3AF]",
-  contacted: "bg-[#3B82F6]",
-  follow_up_required: "bg-[#F59E0B]",
-  appointment_booked: "bg-[#10B981]",
-  closed: "bg-[#059669]",
-  not_interested: "bg-[#EF4444]",
-  invalid_contact: "bg-[#EF4444]",
+  not_contacted: "bg-[var(--text-3)]",
+  contacted: "bg-[var(--accent)]",
+  follow_up_required: "bg-[var(--status-warning)]",
+  appointment_booked: "bg-[var(--status-success)]",
+  closed: "bg-[var(--status-success)]",
+  not_interested: "bg-[var(--status-danger)]",
+  invalid_contact: "bg-[var(--status-danger)]",
 };
 
 // ============================================
 // Helpers
 // ============================================
 
-function getDisplayDomain(url: string): string {
-  try {
-    const hostname = new URL(url).hostname;
-    return hostname.replace(/^www\./, "");
-  } catch {
-    return url;
-  }
+import { formatWebsiteHostname } from "@/components/dashboard/helpers";
+
+function CopyMiniButton({ text, label }: { text: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={async (e) => {
+        e.stopPropagation();
+        try {
+          await navigator.clipboard.writeText(text);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        } catch {
+          // fallback silently
+        }
+      }}
+      title={copied ? "Copied!" : `Copy ${label}`}
+      aria-label={copied ? "Copied!" : `Copy ${label}`}
+      className="shrink-0 rounded-[var(--radius-soft-xs)] p-1.5 text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)] transition-colors duration-150"
+    >
+      {copied ? (
+        <Check className="h-3.5 w-3.5 text-[var(--status-success)]" />
+      ) : (
+        <Copy className="h-3.5 w-3.5" />
+      )}
+    </button>
+  );
 }
 
 // ============================================
@@ -96,6 +110,17 @@ interface NotesSectionProps {
 // ============================================
 // Status Section — Simplified, Not Form-like
 // ============================================
+
+function OptionGlyph({ option }: { option: (typeof STATUS_OPTIONS)[number] }) {
+  const iconClass = "h-3.5 w-3.5 shrink-0";
+  if (!("icon" in option) || !option.icon) {
+    return <span className={`w-2 h-2 rounded-full shrink-0 ${option.dot}`} />;
+  }
+  if (option.icon === "calendar") return <CalendarCheck className={`${iconClass} text-[var(--status-success)]`} />;
+  if (option.icon === "check") return <Check className={`${iconClass} text-[var(--status-success)]`} />;
+  if (option.icon === "x") return <X className={`${iconClass} text-[var(--status-danger)]`} />;
+  return <AlertTriangle className={`${iconClass} text-[var(--status-danger)]`} />;
+}
 
 export function DrawerStatusSection({ lead, onStatusChange }: StatusSectionProps) {
   const router = useRouter();
@@ -163,10 +188,9 @@ export function DrawerStatusSection({ lead, onStatusChange }: StatusSectionProps
 
   const hasChanges = currentStatus !== lead.status;
   const currentLabel = STATUS_LABELS[currentStatus] || currentStatus;
-  const currentDot = STATUS_DOT_COLORS[currentStatus] || "bg-[#9CA3AF]";
-  const currentStyle = STATUS_STYLES[currentStatus] || STATUS_STYLES.not_contacted;
+  const currentDot = STATUS_DOT_COLORS[currentStatus] || "bg-[var(--text-3)]";
 
-  // Compute popover position
+  // Compute popover position from trigger (same width as the trigger)
   const [popoverStyle, setPopoverStyle] = useState<React.CSSProperties>({});
   useEffect(() => {
     if (!isOpen || !triggerRef.current) return;
@@ -175,6 +199,7 @@ export function DrawerStatusSection({ lead, onStatusChange }: StatusSectionProps
       position: "fixed",
       top: rect.bottom + 4,
       left: rect.left,
+      width: rect.width,
       zIndex: 200,
     });
   }, [isOpen]);
@@ -185,21 +210,20 @@ export function DrawerStatusSection({ lead, onStatusChange }: StatusSectionProps
         Status
       </h3>
 
-      {/* Single select trigger — no badge + arrow form pattern */}
+      {/* White bordered trigger — never looks disabled */}
       <button
         ref={triggerRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         disabled={updating}
         className={`
-          w-full flex items-center gap-2 px-3 py-2
-          rounded-[var(--radius-md)] border border-[var(--border)]
-          text-[12px] font-medium
+          w-full flex items-center gap-2 px-3 py-2 min-h-[44px] md:min-h-0
+          rounded-[var(--radius-soft-md)] border border-[var(--border)] bg-[var(--surface)]
+          text-[12px] font-medium text-[var(--text-1)]
           transition-all duration-150
           hover:border-[var(--accent)] hover:shadow-sm
           focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-0
           disabled:opacity-50 disabled:cursor-not-allowed
-          ${currentStyle}
         `}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
@@ -209,13 +233,13 @@ export function DrawerStatusSection({ lead, onStatusChange }: StatusSectionProps
         <ChevronDown className="h-3.5 w-3.5 opacity-40 shrink-0" />
       </button>
 
-      {/* Popover */}
+      {/* Popover — same width as the trigger */}
       {isOpen &&
         createPortal(
           <div
             ref={popoverRef}
             style={popoverStyle}
-            className="w-52 py-1 bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-md)] shadow-[var(--shadow-3)] dl-dropdown-enter"
+            className="py-1 bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-soft-md)] shadow-[var(--shadow-3)] dl-dropdown-enter"
           >
             {STATUS_OPTIONS.map((opt) => {
               const isActive = currentStatus === opt.value;
@@ -229,12 +253,12 @@ export function DrawerStatusSection({ lead, onStatusChange }: StatusSectionProps
                     setError(null);
                   }}
                   className={`
-                    w-full flex items-center gap-2 px-3 py-2 text-[12px]
+                    w-full flex items-center gap-2 px-3 min-h-[44px] py-2 text-[12px]
                     hover:bg-[var(--hover-bg)] transition-colors duration-150
                     ${isActive ? "font-medium text-[var(--text-1)] bg-[var(--hover-bg)]" : "text-[var(--text-2)]"}
                   `}
                 >
-                  <span className={`w-2 h-2 rounded-full shrink-0 ${opt.dot}`} />
+                  <OptionGlyph option={opt} />
                   {opt.label}
                   {isActive && (
                     <Check className="h-3 w-3 ml-auto text-[var(--accent)]" />
@@ -274,11 +298,15 @@ function InfoRow({
   label,
   value,
   href,
+  copyText,
+  copyLabel,
 }: {
   icon: React.ElementType;
   label: string;
   value: string | null;
   href?: string;
+  copyText?: string;
+  copyLabel?: string;
 }) {
   return (
     <div className="flex items-start gap-2 py-1.5">
@@ -295,15 +323,16 @@ function InfoRow({
               rel="noopener noreferrer"
               className="text-[13px] text-[var(--accent)] hover:underline underline-offset-2 decoration-[var(--accent)]/30 hover:decoration-[var(--accent)] transition-colors duration-150 truncate block"
             >
-              {label === "Website" ? getDisplayDomain(value) : value}
+              {label === "Website" ? formatWebsiteHostname(value) : value}
             </a>
           ) : (
             <p className="text-[13px] text-[var(--text-1)] truncate">{value}</p>
           )
         ) : (
-          <p className="text-[12px] text-[var(--text-3)] italic opacity-60">Not provided</p>
+          <p className="text-[12px] text-[var(--text-3)]">Not provided</p>
         )}
       </div>
+      {copyText && <CopyMiniButton text={copyText} label={copyLabel || label} />}
     </div>
   );
 }
@@ -314,35 +343,36 @@ export function DrawerCompanySection({ lead }: SectionBaseProps) {
       <h3 className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-3)] mb-1">
         Company Information
       </h3>
-      <div className="space-y-0 divide-y divide-[var(--border-subtle)]">
-        <InfoRow
-          icon={Building2}
-          label="Company"
-          value={lead.company_name}
-        />
-        <InfoRow
-          icon={Globe}
-          label="Website"
-          value={lead.website}
-          href={lead.website || undefined}
-        />
-        <InfoRow
-          icon={Mail}
-          label="Email"
-          value={lead.email}
-          href={lead.email ? `mailto:${lead.email}` : undefined}
-        />
-        <InfoRow
-          icon={Phone}
-          label="Phone"
-          value={lead.phone}
-          href={lead.phone ? `tel:${lead.phone}` : undefined}
-        />
-        <InfoRow
-          icon={MapPin}
-          label="Country"
-          value={lead.country}
-        />
+      <div className="rounded-[var(--radius-soft-md)] border border-[var(--border-subtle)] bg-[var(--canvas)]/60 px-3 py-1">
+        <div className="divide-y divide-[var(--border-subtle)]">
+          <InfoRow
+            icon={Globe}
+            label="Website"
+            value={lead.website}
+            href={lead.website || undefined}
+          />
+          <InfoRow
+            icon={Mail}
+            label="Email"
+            value={lead.email}
+            href={lead.email ? `mailto:${lead.email}` : undefined}
+            copyText={lead.email || undefined}
+            copyLabel="email"
+          />
+          <InfoRow
+            icon={Phone}
+            label="Phone"
+            value={lead.phone}
+            href={lead.phone ? `tel:${lead.phone}` : undefined}
+            copyText={lead.phone || undefined}
+            copyLabel="phone"
+          />
+          <InfoRow
+            icon={MapPin}
+            label="Country"
+            value={lead.country}
+          />
+        </div>
       </div>
     </div>
   );

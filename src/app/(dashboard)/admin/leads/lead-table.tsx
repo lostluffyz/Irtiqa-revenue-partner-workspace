@@ -19,6 +19,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { updateLeadStatusAction, assignLeadsAction } from "./actions";
+import { formatWebsiteHostname } from "@/components/dashboard/helpers";
 import type { ActivePartner } from "./lead-filters";
 
 export interface Lead {
@@ -50,23 +51,23 @@ interface LeadTableProps {
 }
 
 const STATUS_CONFIG: Record<string, { variant: "info" | "default" | "warning" | "success" | "danger"; label: string; color: string }> = {
-  not_contacted: { variant: "info", label: "Not Contacted", color: "bg-blue-50 text-blue-600" },
-  contacted: { variant: "default", label: "Contacted", color: "bg-gray-100 text-gray-600" },
-  follow_up_required: { variant: "warning", label: "Follow Up", color: "bg-amber-50 text-amber-600" },
-  appointment_booked: { variant: "success", label: "Appt Booked", color: "bg-emerald-50 text-emerald-600" },
-  closed: { variant: "success", label: "Closed", color: "bg-emerald-50 text-emerald-600" },
-  not_interested: { variant: "danger", label: "Not Interested", color: "bg-red-50 text-red-600" },
-  invalid_contact: { variant: "danger", label: "Invalid", color: "bg-red-50 text-red-600" },
+  not_contacted: { variant: "default", label: "Not Contacted", color: "bg-[#F3F4F6] text-[#6B7280]" },
+  contacted: { variant: "info", label: "Contacted", color: "bg-[#EFF6FF] text-[#1A56DB]" },
+  follow_up_required: { variant: "info", label: "Follow Up", color: "bg-[#EFF6FF] text-[#1A56DB]" },
+  appointment_booked: { variant: "success", label: "Appt Booked", color: "bg-[#ECFDF5] text-[#047857]" },
+  closed: { variant: "success", label: "Closed", color: "bg-[#ECFDF5] text-[#047857]" },
+  not_interested: { variant: "danger", label: "Not Interested", color: "bg-[#FEF2F2] text-[#DC2626]" },
+  invalid_contact: { variant: "danger", label: "Invalid", color: "bg-[#FEF2F2] text-[#DC2626]" },
 };
 
 const ALL_STATUS_OPTIONS = [
-  { value: "not_contacted", label: "Not Contacted", color: "bg-blue-50 text-blue-600" },
-  { value: "contacted", label: "Contacted", color: "bg-gray-100 text-gray-600" },
-  { value: "follow_up_required", label: "Follow Up Required", color: "bg-amber-50 text-amber-600" },
-  { value: "appointment_booked", label: "Appointment Booked", color: "bg-emerald-50 text-emerald-600" },
-  { value: "closed", label: "Closed", color: "bg-emerald-50 text-emerald-600" },
-  { value: "not_interested", label: "Not Interested", color: "bg-red-50 text-red-600" },
-  { value: "invalid_contact", label: "Invalid Contact", color: "bg-red-50 text-red-600" },
+  { value: "not_contacted", label: "Not Contacted", color: "bg-[#F3F4F6] text-[#6B7280]" },
+  { value: "contacted", label: "Contacted", color: "bg-[#EFF6FF] text-[#1A56DB]" },
+  { value: "follow_up_required", label: "Follow Up Required", color: "bg-[#EFF6FF] text-[#1A56DB]" },
+  { value: "appointment_booked", label: "Appointment Booked", color: "bg-[#ECFDF5] text-[#047857]" },
+  { value: "closed", label: "Closed", color: "bg-[#ECFDF5] text-[#047857]" },
+  { value: "not_interested", label: "Not Interested", color: "bg-[#FEF2F2] text-[#DC2626]" },
+  { value: "invalid_contact", label: "Invalid Contact", color: "bg-[#FEF2F2] text-[#DC2626]" },
 ];
 
 function getStatusConfig(status: string) {
@@ -83,35 +84,6 @@ function formatDate(dateStr: string): string {
   if (diffDay === 1) return "Yesterday";
   if (diffDay < 7) return `${diffDay}d ago`;
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
-function getCompanyInitials(name: string): string {
-  return name
-    .split(/[\s&]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
-}
-
-const COMPANY_COLORS = [
-  "bg-blue-50 text-blue-600 border-blue-100",
-  "bg-emerald-50 text-emerald-600 border-emerald-100",
-  "bg-violet-50 text-violet-600 border-violet-100",
-  "bg-amber-50 text-amber-600 border-amber-100",
-  "bg-rose-50 text-rose-600 border-rose-100",
-  "bg-cyan-50 text-cyan-600 border-cyan-100",
-  "bg-orange-50 text-orange-600 border-orange-100",
-  "bg-teal-50 text-teal-600 border-teal-100",
-];
-
-function getCompanyColor(name: string): string {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return COMPANY_COLORS[Math.abs(hash) % COMPANY_COLORS.length];
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -451,10 +423,10 @@ export function LeadTable({
 
   return (
     <div>
-      {/* Table */}
-      <div className="surface overflow-hidden">
+      {/* Table — desktop and larger */}
+      <div className="surface overflow-hidden hidden md:block">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full table-fixed">
             {/* Header */}
             <thead>
               <tr className="border-b border-[var(--border)] bg-[#FAFAF8]">
@@ -470,19 +442,19 @@ export function LeadTable({
                 <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] sticky top-0 bg-[#FAFAF8] z-10">
                   Company
                 </th>
-                <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] sticky top-0 bg-[#FAFAF8] z-10">
+                <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] sticky top-0 bg-[#FAFAF8] z-10 w-[210px]">
                   Contact
                 </th>
-                <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] sticky top-0 bg-[#FAFAF8] z-10 hidden lg:table-cell">
+                <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] sticky top-0 bg-[#FAFAF8] z-10 hidden min-[1500px]:table-cell w-[150px]">
                   Industry
                 </th>
-                <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] sticky top-0 bg-[#FAFAF8] z-10">
+                <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] sticky top-0 bg-[#FAFAF8] z-10 w-[130px]">
                   Status
                 </th>
-                <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] sticky top-0 bg-[#FAFAF8] z-10 hidden md:table-cell">
+                <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] sticky top-0 bg-[#FAFAF8] z-10 hidden md:table-cell w-[190px]">
                   Assigned To
                 </th>
-                <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] sticky top-0 bg-[#FAFAF8] z-10 hidden xl:table-cell">
+                <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-3)] sticky top-0 bg-[#FAFAF8] z-10 hidden min-[1500px]:table-cell w-[100px]">
                   Created
                 </th>
                 <th className="w-10 px-2 sticky top-0 bg-[#FAFAF8] z-10" />
@@ -495,7 +467,6 @@ export function LeadTable({
                 const isSelected = selectedIds.has(lead.id);
                 const effectiveStatus = getStatus(lead);
                 const effectivePartner = getPartner(lead);
-                const companyColor = getCompanyColor(lead.company_name);
                 const isContextMenuOpen = contextMenuLeadId === lead.id;
 
                 return (
@@ -523,23 +494,32 @@ export function LeadTable({
 
                     {/* Company */}
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border text-[11px] font-bold ${companyColor}`}>
-                          {getCompanyInitials(lead.company_name)}
+                      <div className="flex items-center gap-3 min-w-0 max-w-[280px]">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--hover-bg)]">
+                          <Building2 className="h-4 w-4 text-[var(--text-2)]" />
                         </div>
                         <div className="min-w-0">
-                          <span className="block text-[13px] font-semibold text-[var(--text-1)] truncate">
+                          <span
+                            className="block text-[13px] font-semibold text-[var(--text-1)] truncate"
+                            title={lead.company_name}
+                          >
                             {lead.company_name}
                           </span>
-                          <div className="flex items-center gap-1.5 mt-0.5">
+                          <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
                             {lead.website && (
-                              <span className="text-[11px] text-[var(--text-3)] truncate flex items-center gap-1">
+                              <a
+                                href={lead.website}
+                                target="_blank"
+                                rel="noreferrer"
+                                title={lead.website}
+                                className="text-[11px] text-[var(--text-3)] hover:text-[var(--accent)] truncate flex items-center gap-1 min-w-0 transition-colors duration-150"
+                              >
                                 <Globe className="h-3 w-3 shrink-0" />
-                                {lead.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}
-                              </span>
+                                <span className="truncate">{formatWebsiteHostname(lead.website)}</span>
+                              </a>
                             )}
                             {lead.industry && (
-                              <span className="text-[11px] text-[var(--text-3)] truncate hidden sm:inline">
+                              <span className="industry-subtitle text-[11px] text-[var(--text-3)] truncate hidden sm:inline">
                                 {!lead.website && <span className="mr-1">·</span>}
                                 {lead.industry}
                               </span>
@@ -553,9 +533,12 @@ export function LeadTable({
                     <td className="px-4 py-3">
                       <div className="min-w-0">
                         {lead.email ? (
-                          <div className="flex items-center gap-1.5 text-[12px] text-[var(--text-2)] truncate max-w-[200px]">
+                          <div
+                            className="flex items-center gap-1.5 text-[12px] text-[var(--text-2)] truncate max-w-[200px]"
+                            title={lead.email}
+                          >
                             <Mail className="h-3 w-3 shrink-0 text-[var(--text-3)]" />
-                            {lead.email}
+                            <span className="truncate">{lead.email}</span>
                           </div>
                         ) : (
                           <span className="text-[12px] text-[var(--text-3)]">—</span>
@@ -570,7 +553,7 @@ export function LeadTable({
                     </td>
 
                     {/* Industry */}
-                    <td className="px-4 py-3 hidden lg:table-cell">
+                    <td className="px-4 py-3 hidden min-[1500px]:table-cell">
                       {lead.industry ? (
                         <div className="flex items-center gap-1.5 text-[12px] text-[var(--text-2)] truncate max-w-[140px]">
                           <Building2 className="h-3 w-3 shrink-0 text-[var(--text-3)]" />
@@ -594,7 +577,10 @@ export function LeadTable({
                       {effectivePartner ? (
                         <div className="flex items-center gap-2 min-w-0">
                           <Avatar name={effectivePartner.profiles?.full_name || "Unknown"} size="sm" />
-                          <span className="text-[12px] text-[var(--text-2)] truncate max-w-[120px]">
+                          <span
+                            className="text-[12px] text-[var(--text-2)] truncate max-w-[170px]"
+                            title={effectivePartner.profiles?.full_name || undefined}
+                          >
                             {effectivePartner.profiles?.full_name}
                           </span>
                         </div>
@@ -606,7 +592,7 @@ export function LeadTable({
                     </td>
 
                     {/* Created */}
-                    <td className="px-4 py-3 hidden xl:table-cell">
+                    <td className="px-4 py-3 hidden min-[1500px]:table-cell">
                       <span className="text-[12px] text-[var(--text-3)] tabular-nums">
                         {formatDate(lead.created_at)}
                       </span>
@@ -645,9 +631,117 @@ export function LeadTable({
         </div>
       </div>
 
+      {/* Cards — below md, same data and handlers as the table */}
+      <div className="space-y-2 md:hidden">
+        {leads.map((lead) => {
+          const isSelected = selectedIds.has(lead.id);
+          const effectiveStatus = getStatus(lead);
+          const effectivePartner = getPartner(lead);
+          const isContextMenuOpen = contextMenuLeadId === lead.id;
+
+          return (
+            <div
+              key={lead.id}
+              className={`surface p-3 ${isSelected ? "leads-row-selected" : ""}`}
+            >
+              <div className="flex items-center gap-1">
+                <label className="flex h-11 w-11 shrink-0 -m-2 items-center justify-center">
+                  <span className="sr-only">Select {lead.company_name}</span>
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => onToggleSelect(lead.id)}
+                    className="lead-checkbox h-5 w-5"
+                  />
+                </label>
+                <div className="min-w-0 flex-1">
+                  <p
+                    className="text-[14px] font-semibold text-[var(--text-1)] leading-snug line-clamp-2"
+                    title={lead.company_name}
+                  >
+                    {lead.company_name}
+                  </p>
+                  {lead.website && (
+                    <a
+                      href={lead.website}
+                      target="_blank"
+                      rel="noreferrer"
+                      title={lead.website}
+                      className="mt-0.5 flex items-center gap-1 text-[12px] text-[var(--text-3)]"
+                    >
+                      <Globe className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{formatWebsiteHostname(lead.website)}</span>
+                    </a>
+                  )}
+                </div>
+                <div className="shrink-0">
+                  <InlineStatusBadge
+                    lead={{ ...lead, status: effectiveStatus }}
+                    onStatusChange={handleStatusChange}
+                  />
+                </div>
+                <div className="relative shrink-0 -mr-2">
+                  <button
+                    type="button"
+                    className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-[var(--radius-sm)] text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)] transition-colors duration-150"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setContextMenuLeadId(isContextMenuOpen ? null : lead.id);
+                    }}
+                    aria-label={`Actions for ${lead.company_name}`}
+                  >
+                    <MoreHorizontal className="h-5 w-5" />
+                  </button>
+                  {isContextMenuOpen && (
+                    <RowContextMenu
+                      lead={{ ...lead, status: effectiveStatus, partners: effectivePartner }}
+                      onClose={() => setContextMenuLeadId(null)}
+                      onStatusChange={handleStatusChange}
+                      activePartners={activePartners}
+                      onAssign={handleAssign}
+                    />
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-[var(--border-subtle)] pt-2 text-[12px]">
+                {lead.phone && (
+                  <span className="inline-flex items-center gap-1 text-[var(--text-2)] tabular-nums">
+                    <Phone className="h-3 w-3 shrink-0 text-[var(--text-3)]" />
+                    {lead.phone}
+                  </span>
+                )}
+                {lead.email && (
+                  <span
+                    className="inline-flex min-w-0 max-w-full items-center gap-1 text-[var(--text-2)]"
+                    title={lead.email}
+                  >
+                    <Mail className="h-3 w-3 shrink-0 text-[var(--text-3)]" />
+                    <span className="truncate">{lead.email}</span>
+                  </span>
+                )}
+                <span className="inline-flex min-w-0 items-center gap-1">
+                  <span className="shrink-0 text-[var(--text-3)]">Assigned to</span>
+                  {effectivePartner ? (
+                    <span className="truncate font-medium text-[var(--text-1)]">
+                      {effectivePartner.profiles?.full_name}
+                    </span>
+                  ) : (
+                    <span className="italic text-[var(--text-3)]">Unassigned</span>
+                  )}
+                </span>
+                <span className="ml-auto shrink-0 tabular-nums text-[var(--text-3)]">
+                  {formatDate(lead.created_at)}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4">
+        <div className="sticky bottom-0 z-10 mt-4 flex items-center justify-center gap-4 border-t border-[var(--border-subtle)] bg-[var(--canvas)]/95 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur">
           <p className="text-[12px] text-[var(--text-3)] tabular-nums">
             Page {currentPage} of {totalPages}
           </p>
@@ -659,7 +753,7 @@ export function LeadTable({
                   query: { ...searchParams, page: String(currentPage - 1) },
                 }}
               >
-                <Button variant="ghost" size="sm" className="h-[32px] text-[12px]">
+                <Button variant="ghost" size="sm" className="h-[32px] min-h-[44px] text-[12px] md:min-h-0">
                   Previous
                 </Button>
               </Link>
@@ -671,7 +765,7 @@ export function LeadTable({
                   query: { ...searchParams, page: String(currentPage + 1) },
                 }}
               >
-                <Button variant="ghost" size="sm" className="h-[32px] text-[12px]">
+                <Button variant="ghost" size="sm" className="h-[32px] min-h-[44px] text-[12px] md:min-h-0">
                   Next
                 </Button>
               </Link>
@@ -679,6 +773,8 @@ export function LeadTable({
           </div>
         </div>
       )}
+      {/* Clearance so the sticky pagination never covers the last card */}
+      <div aria-hidden="true" className="h-3" />
     </div>
   );
 }
@@ -726,7 +822,7 @@ export function LeadsTableSkeleton() {
           <div className="h-4 w-4 skeleton rounded" />
           <div className="h-3 w-32 skeleton rounded" />
           <div className="h-3 w-24 skeleton rounded" />
-          <div className="h-3 w-20 skeleton rounded hidden lg:block" />
+          <div className="h-3 w-20 skeleton rounded hidden min-[1500px]:block" />
           <div className="h-3 w-20 skeleton rounded" />
           <div className="h-3 w-24 skeleton rounded hidden md:block" />
         </div>

@@ -14,16 +14,16 @@ export function MobileStatCards({ totalLeads, totalLeadsContacted, totalAppointm
   return (
     <div className="mobile-stat-grid">
       <MobileStatCard
-        icon={<Target className="h-5 w-5 text-[#1A56DB]" />}
-        iconBg="bg-[#EFF6FF]"
+        icon={<Target className="h-5 w-5 text-[var(--text-2)]" />}
+        iconBg="bg-[var(--hover-bg)]"
         value={totalLeads}
         label="Total Leads"
         helper={totalLeads > 0 ? `${totalLeads} assigned` : "No leads yet"}
         href="/partner/leads"
       />
       <MobileStatCard
-        icon={<FileText className="h-5 w-5 text-[#1A56DB]" />}
-        iconBg="bg-[#EFF6FF]"
+        icon={<FileText className="h-5 w-5 text-[var(--text-2)]" />}
+        iconBg="bg-[var(--hover-bg)]"
         value={totalLeadsContacted}
         label="Leads Contacted"
         helper={
@@ -33,15 +33,15 @@ export function MobileStatCards({ totalLeads, totalLeadsContacted, totalAppointm
         }
       />
       <MobileStatCard
-        icon={<CalendarCheck className="h-5 w-5 text-[#D97706]" />}
-        iconBg="bg-[#FFFBEB]"
+        icon={<CalendarCheck className="h-5 w-5 text-[var(--text-2)]" />}
+        iconBg="bg-[var(--hover-bg)]"
         value={totalAppointments}
         label="Appointments"
         helper={totalAppointments > 0 ? "Booked" : "None yet"}
       />
       <MobileStatCard
-        icon={<TrendingUp className="h-5 w-5 text-[#059669]" />}
-        iconBg="bg-[#ECFDF5]"
+        icon={<TrendingUp className="h-5 w-5 text-[var(--text-2)]" />}
+        iconBg="bg-[var(--hover-bg)]"
         value={totalDeals}
         label="Deals Closed"
         helper={totalDeals > 0 ? "Closed deals" : "No deals yet"}
@@ -66,7 +66,7 @@ function MobileStatCard({
   href?: string;
 }) {
   const content = (
-    <div className="mobile-stat-card mobile-card-press">
+    <div className={`mobile-stat-card ${href ? "mobile-card-press" : ""}`}>
       <div className={`mobile-stat-icon-wrap ${iconBg} flex h-10 w-10 items-center justify-center rounded-[10px]`}>
         {icon}
       </div>

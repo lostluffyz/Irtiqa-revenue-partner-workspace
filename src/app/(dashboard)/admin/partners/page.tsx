@@ -129,34 +129,18 @@ export default async function PartnersPage({
     region?: string;
   }>;
 }) {
-  console.log("[Partners] === PAGE START ===");
-  console.time("[Partners] total");
-
-  console.time("[Partners] requireAdmin");
   await requireAdmin();
-  console.timeEnd("[Partners] requireAdmin");
 
-  console.time("[Partners] searchParams");
   const sp = await searchParams;
-  console.timeEnd("[Partners] searchParams");
-  console.log("[Partners] searchParams:", JSON.stringify(sp));
 
-  console.time("[Partners] Promise.all");
   try {
     const [{ partners, total }, aggregateStats, regions] = await Promise.all([
       getPartners(sp.search, sp.status, sp.region),
       getAggregateStats(),
       getRegions(),
     ]);
-    console.timeEnd("[Partners] Promise.all");
-    console.log("[Partners] partners:", partners?.length, "total:", total);
-    console.log("[Partners] aggregateStats:", JSON.stringify(aggregateStats));
-    console.log("[Partners] regions:", regions?.length);
 
     const hasActiveFilters = !!(sp.search || (sp.status && sp.status !== "all") || sp.region);
-
-    console.log("[Partners] === RENDERING JSX ===");
-    console.timeEnd("[Partners] total");
 
     return (
     <div className="animate-fade-in space-y-6">
@@ -182,10 +166,11 @@ export default async function PartnersPage({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard value={aggregateStats.total} label="Total" />
         <StatCard value={aggregateStats.active} label="Active" />
-        <StatCard value={aggregateStats.withLeads} label="With Leads" />
+        <StatCard value={aggregateStats.withLeads} label="Leads Assigned" sub="Across all partners" />
         <StatCard
           value={aggregateStats.inactive + aggregateStats.suspended}
           label="Needs Attention"
+          sub="Inactive + suspended"
         />
       </div>
 
@@ -216,8 +201,7 @@ export default async function PartnersPage({
     </div>
   );
   } catch (error) {
-    console.error("[Partners] === ERROR ===", error);
-    console.timeEnd("[Partners] total");
+    console.error("[Partners] page error:", error);
     throw error;
   }
 }

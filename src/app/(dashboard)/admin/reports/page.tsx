@@ -1,16 +1,13 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin";
+import { getBusinessDate } from "@/lib/program-timezone";
+import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableHeaderCell,
-  TableCell,
-} from "@/components/ui/table";
-import { EmptyState } from "@/components/ui/empty-state";
-import { FileText } from "lucide-react";
+import { EmptyContentCard } from "@/components/cards/content-cards";
+import { ChevronDown, FileText, Phone, CalendarCheck, Handshake, Search } from "lucide-react";
+import { ReportsTable, type ReportRow } from "./reports-table";
+import { REPORTS_LIMIT, summarizeReports, isResultCapped } from "./report-utils";
 
 async function getReports(params: { partner?: string; from?: string; to?: string }) {
   const supabase = await createClient();
@@ -19,7 +16,7 @@ async function getReports(params: { partner?: string; from?: string; to?: string
     .from("daily_reports")
     .select("*, partners!inner(company_id, profiles!inner(full_name))")
     .order("report_date", { ascending: false })
-    .limit(200);
+    .limit(REPORTS_LIMIT);
 
   if (params.partner) {
     query = query.eq("partner_id", params.partner);
@@ -59,6 +56,17 @@ async function getPartners() {
   }));
 }
 
+const CONTROL_CLASS =
+  "h-[44px] w-full min-w-0 rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-3 text-[14px] text-[var(--text-1)] transition-colors duration-150 focus:border-[var(--accent)] focus:outline-none focus:[box-shadow:0_0_0_3px_var(--focus-ring)]";
+
+const LABEL_CLASS = "mb-1.5 block text-[13px] font-medium text-[var(--text-2)]";
+
+const APPLY_CLASS =
+  "inline-flex h-[44px] items-center justify-center rounded-[12px] bg-[var(--accent)] px-5 text-[14px] font-medium text-white transition-colors duration-150 hover:bg-[var(--accent-hover)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2 active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100";
+
+const CLEAR_CLASS =
+  "inline-flex h-[44px] items-center justify-center rounded-[12px] px-5 text-[14px] font-medium text-[var(--text-2)] transition-colors duration-150 hover:bg-[var(--hover-bg)] hover:text-[var(--text-1)] focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2";
+
 export default async function ReportsPage({
   searchParams,
 }: {
@@ -68,113 +76,169 @@ export default async function ReportsPage({
   const sp = await searchParams;
   const reports = await getReports(sp);
   const partners = await getPartners();
+  const todayStr = getBusinessDate();
+  const hasFilters = Boolean(sp.partner || sp.from || sp.to);
+  const summary = summarizeReports(reports);
+  const capped = isResultCapped(reports.length);
+
+  const rows: ReportRow[] = reports.map((r) => ({
+    id: r.id,
+    partner_id: r.partner_id,
+    report_date: r.report_date,
+    leads_contacted: r.leads_contacted,
+    appointments_booked: r.appointments_booked,
+    deals_closed: r.deals_closed,
+    biggest_challenge: r.biggest_challenge,
+    additional_notes: r.additional_notes,
+    created_at: r.created_at ?? null,
+    partnerName: r.partners?.profiles?.full_name || "Unknown",
+    companyId: r.partners?.company_id ?? null,
+  }));
+
+  const tiles = [
+    { label: "Reports", value: summary.count, icon: FileText },
+    { label: "Contacted", value: summary.contacted, icon: Phone },
+    { label: "Appointments", value: summary.appointments, icon: CalendarCheck },
+    { label: "Deals closed", value: summary.deals, icon: Handshake },
+  ];
 
   return (
     <div>
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-[28px] font-bold tracking-[-0.025em] text-[var(--text-1)]">
-          Daily Reports
-        </h1>
-        <p className="mt-1 text-[14px] text-[var(--text-3)]">
-          View partner daily activity reports.
-        </p>
-      </div>
+      <PageHeader
+        title="Daily Reports"
+        description="Review what each partner submitted every day."
+      />
 
-      {/* Filter */}
-      <form className="surface p-4 mb-6 flex flex-wrap items-end gap-3">
-        <div className="w-48">
-          <label className="block text-[12px] font-semibold text-[var(--text-2)] mb-1.5">
-            Partner
-          </label>
-          <select
-            name="partner"
-            defaultValue={sp.partner || ""}
-            className="input-field"
-          >
-            <option value="">All Partners</option>
-            {partners.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.profiles?.full_name} ({p.company_id})
-              </option>
-            ))}
-          </select>
+      {/* ── Filter bar ── */}
+      <form
+        method="GET"
+        className="mt-6 rounded-[18px] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-[var(--shadow-soft)]"
+      >
+        <div className="grid grid-cols-1 gap-3 md:flex md:items-end md:gap-3">
+          <div className="min-w-0 md:w-56 md:shrink-0">
+            <label htmlFor="report-filter-partner" className={LABEL_CLASS}>
+              Partner
+            </label>
+            <div className="relative">
+              <select
+                id="report-filter-partner"
+                name="partner"
+                defaultValue={sp.partner || ""}
+                className={`${CONTROL_CLASS} appearance-none pr-9`}
+              >
+                <option value="">All Partners</option>
+                {partners.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.profiles?.full_name} ({p.company_id})
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                aria-hidden="true"
+                className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-3)]"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3 md:flex md:gap-3">
+            <div className="min-w-0 md:w-40">
+              <label htmlFor="report-filter-from" className={LABEL_CLASS}>
+                From
+              </label>
+              <input
+                id="report-filter-from"
+                type="date"
+                name="from"
+                defaultValue={sp.from || ""}
+                className={`${CONTROL_CLASS} tabular-nums`}
+              />
+            </div>
+            <div className="min-w-0 md:w-40">
+              <label htmlFor="report-filter-to" className={LABEL_CLASS}>
+                To
+              </label>
+              <input
+                id="report-filter-to"
+                type="date"
+                name="to"
+                defaultValue={sp.to || ""}
+                className={`${CONTROL_CLASS} tabular-nums`}
+              />
+            </div>
+          </div>
+          <div className={`grid gap-3 md:flex md:shrink-0 md:gap-2 ${hasFilters ? "grid-cols-2" : "grid-cols-1"}`}>
+            <button type="submit" className={APPLY_CLASS}>
+              Apply
+            </button>
+            {hasFilters && (
+              <Link href="/admin/reports" className={CLEAR_CLASS}>
+                Clear
+              </Link>
+            )}
+          </div>
         </div>
-        <div className="w-44">
-          <label className="block text-[12px] font-semibold text-[var(--text-2)] mb-1.5">
-            From
-          </label>
-          <input
-            type="date"
-            name="from"
-            defaultValue={sp.from || ""}
-            className="input-field"
-          />
-        </div>
-        <div className="w-44">
-          <label className="block text-[12px] font-semibold text-[var(--text-2)] mb-1.5">
-            To
-          </label>
-          <input
-            type="date"
-            name="to"
-            defaultValue={sp.to || ""}
-            className="input-field"
-          />
-        </div>
-        <Button type="submit" variant="secondary" size="sm">
-          Filter
-        </Button>
       </form>
 
-      {/* Reports table */}
+      {/* ── Result count ── */}
+      <p className="mt-3 text-[13px] text-[var(--text-3)]">
+        Showing {reports.length} report{reports.length === 1 ? "" : "s"}
+        {capped && (
+          <> · Showing the latest {REPORTS_LIMIT}. Narrow the date range to see older reports.</>
+        )}
+      </p>
+
       {reports.length === 0 ? (
-        <EmptyState
-          icon={<FileText className="h-6 w-6" />}
-          title="No reports found"
-          description="Partners have not submitted any reports matching these filters."
-        />
+        <div className="mt-4">
+          {hasFilters ? (
+            <EmptyContentCard
+              icon={<Search className="h-7 w-7" />}
+              title="No reports match these filters"
+              body="Try a wider date range or another partner."
+              action={
+                <Link href="/admin/reports">
+                  <Button size="sm" variant="secondary" className="min-h-[44px]">
+                    Clear filters
+                  </Button>
+                </Link>
+              }
+            />
+          ) : (
+            <EmptyContentCard
+              icon={<FileText className="h-7 w-7" />}
+              title="No daily reports yet"
+              body="Reports appear here once partners submit them."
+            />
+          )}
+        </div>
       ) : (
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableHeaderCell>Partner</TableHeaderCell>
-              <TableHeaderCell>Date</TableHeaderCell>
-              <TableHeaderCell className="text-right">Contacted</TableHeaderCell>
-              <TableHeaderCell className="text-right">Appointments</TableHeaderCell>
-              <TableHeaderCell className="text-right">Deals Closed</TableHeaderCell>
-              <TableHeaderCell>Challenge</TableHeaderCell>
-              <TableHeaderCell>Notes</TableHeaderCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {reports.map((report) => (
-              <TableRow key={report.id}>
-                <TableCell className="font-medium text-[var(--text-1)]">
-                  {report.partners?.profiles?.full_name || "Unknown"}
-                </TableCell>
-                <TableCell className="tabular-nums">
-                  {report.report_date}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {report.leads_contacted}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {report.appointments_booked}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {report.deals_closed}
-                </TableCell>
-                <TableCell className="max-w-[200px] truncate text-[12px] text-[var(--text-3)]">
-                  {report.biggest_challenge || "—"}
-                </TableCell>
-                <TableCell className="max-w-[200px] truncate text-[12px] text-[var(--text-3)]">
-                  {report.additional_notes || "—"}
-                </TableCell>
-              </TableRow>
+        <>
+          {/* ── Summary tiles ── */}
+          <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+            {tiles.map((tile) => (
+              <div
+                key={tile.label}
+                className="flex items-center gap-3 rounded-[18px] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-[var(--shadow-soft)]"
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[var(--hover-bg)] text-[var(--text-2)]">
+                  <tile.icon className="h-5 w-5" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[20px] font-semibold leading-none tabular-nums text-[var(--text-1)]">
+                    {tile.value.toLocaleString("en-US")}
+                  </p>
+                  <p className="mt-1 truncate text-[12px] text-[var(--text-3)]">{tile.label}</p>
+                </div>
+              </div>
             ))}
-          </TableBody>
-        </Table>
+          </div>
+          <p className="mt-2 text-[12px] text-[var(--text-3)]">
+            Totals reflect the reports shown above.
+          </p>
+
+          {/* ── Table (desktop) + cards (mobile) ── */}
+          <div className="mt-4">
+            <ReportsTable rows={rows} todayStr={todayStr} />
+          </div>
+        </>
       )}
     </div>
   );

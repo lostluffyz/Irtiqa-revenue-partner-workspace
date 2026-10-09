@@ -5,13 +5,17 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { REDUCED_MOTION_TRANSITION } from "@/lib/animations";
 
 /**
- * PageTransition — AnimatePresence wrapper for route transitions.
+ * PageTransition — subtle fade wrapper for route transitions.
  *
  * Wraps {children} inside each shell. Only triggers on pathname changes —
  * search params, filter changes, pagination, form typing, and component
  * state updates do NOT trigger transitions.
  *
- * Uses `mode="wait"` so the old page exits before the new enters.
+ * Uses the default (sync) AnimatePresence mode so the incoming page
+ * cross-fades with the outgoing page. mode="wait" MUST NOT be used here:
+ * it unmounts the old page before the new page's RSC stream resolves,
+ * leaving the content area blank (with zero Suspense fallback) on slow
+ * navigations until a manual refresh.
  * Respects prefers-reduced-motion by setting duration to 0.
  */
 export function PageTransition({ children }: { children: React.ReactNode }) {
@@ -19,7 +23,7 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
   const prefersReduced = useReducedMotion();
 
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence>
       <motion.div
         key={pathname}
         initial={{ opacity: 0, y: 6 }}

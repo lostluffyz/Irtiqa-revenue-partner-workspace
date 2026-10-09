@@ -11,6 +11,7 @@ import {
   Users,
   Building2,
   MoreHorizontal,
+  ChevronRight,
   Key,
   Shield,
   ShieldOff,
@@ -60,14 +61,14 @@ interface PartnerListProps {
 /* ═══════════════════════════════════════════════════════════════
    Status Config
    ═══════════════════════════════════════════════════════════════ */
-const STATUS_CONFIG: Record<string, { variant: "success" | "warning" | "danger" | "default"; label: string; dot: string }> = {
-  active: { variant: "success", label: "Active", dot: "bg-emerald-500" },
-  inactive: { variant: "warning", label: "Inactive", dot: "bg-amber-500" },
-  suspended: { variant: "danger", label: "Suspended", dot: "bg-red-500" },
+const STATUS_CONFIG: Record<string, { variant: "success" | "warning" | "danger" | "default"; label: string }> = {
+  active: { variant: "success", label: "Active" },
+  inactive: { variant: "warning", label: "Inactive" },
+  suspended: { variant: "danger", label: "Suspended" },
 };
 
 function getStatusConfig(status: string) {
-  return STATUS_CONFIG[status] || { variant: "default" as const, label: status, dot: "bg-gray-400" };
+  return STATUS_CONFIG[status] || { variant: "default" as const, label: status };
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -115,7 +116,7 @@ function PartnerCard({
 
         {/* Primary: Name + metadata */}
         <DataCardColumn primary>
-          {/* Row 1: Name (dominant) + Status dot */}
+          {/* Row 1: Name (dominant) + Status pill (only when not Active) */}
           <div className="flex items-center gap-2">
             <Link
               href={`/admin/partners/${partner.id}`}
@@ -123,18 +124,20 @@ function PartnerCard({
             >
               {displayName}
             </Link>
-            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${statusConfig.dot}`} title={statusConfig.label} />
+            {partner.status !== "active" && (
+              <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
+            )}
           </div>
 
-          {/* Row 2: Metadata — recedes visually */}
-          <div className="flex items-center gap-1.5 mt-0.5">
+          {/* Row 2: one tidy meta row, inside the card on all sizes */}
+          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 mt-0.5">
             <code
               className="dl-type-micro normal-case tracking-normal"
               style={{ fontFamily: "var(--font-mono)" }}
             >
               {partner.company_id}
             </code>
-            {partner.profiles?.email && (
+            {partner.profiles?.email && !partner.profiles.email.endsWith("@rp.irtiqa.internal") && (
               <>
                 <span className="dl-type-micro text-[var(--text-3)]">·</span>
                 <span className="dl-type-caption text-[var(--text-3)] truncate max-w-[180px]">
@@ -144,21 +147,38 @@ function PartnerCard({
             )}
             {partner.regions && (
               <>
-                <span className="dl-type-micro text-[var(--text-3)] hidden sm:inline">·</span>
-                <span className="hidden sm:inline-flex items-center gap-1 dl-type-caption text-[var(--text-3)]">
+                <span className="dl-type-micro text-[var(--text-3)]">·</span>
+                <span className="inline-flex items-center gap-1 dl-type-caption text-[var(--text-3)]">
                   <MapPin className="h-3 w-3" />
                   {partner.regions.name}
                 </span>
               </>
             )}
-            {partner.reportStatus && (
+            {partner.status === "active" && partner.reportStatus ? (
               <>
-                <span className="dl-type-micro text-[var(--text-3)] hidden sm:inline">·</span>
-                <span className="hidden sm:inline-flex items-center">
+                <span className="dl-type-micro text-[var(--text-3)]">·</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="dl-type-micro normal-case tracking-normal text-[var(--text-3)]">
+                    Report
+                  </span>
                   <ReportStatusChip status={partner.reportStatus} />
                 </span>
               </>
-            )}
+            ) : partner.status !== "active" ? (
+              <>
+                <span className="dl-type-micro text-[var(--text-3)]">·</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="dl-type-micro normal-case tracking-normal text-[var(--text-3)]">
+                    Report
+                  </span>
+                  <span className="dl-type-caption text-[var(--text-3)]" title="Not tracked for inactive partners">—</span>
+                </span>
+              </>
+            ) : null}
+            <span className="dl-type-micro text-[var(--text-3)] md:hidden">·</span>
+            <span className="dl-type-caption text-[var(--text-3)] tabular-nums md:hidden">
+              {partner.leadCount} leads
+            </span>
           </div>
         </DataCardColumn>
 
@@ -185,24 +205,14 @@ function PartnerCard({
               e.stopPropagation();
               onOpenMenu(partner.id);
             }}
-            className="p-1.5 rounded-[var(--radius-sm)] text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)] transition-colors duration-100"
+            className="p-1.5 rounded-[var(--radius-sm)] text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--hover-bg)] transition-colors duration-100 focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-[-2px]"
             aria-label="Actions"
           >
             <MoreHorizontal className="h-4 w-4" />
           </button>
+          <ChevronRight className="h-4 w-4 shrink-0 text-[var(--text-3)]" aria-hidden="true" />
         </div>
       </DataCard>
-
-      {/* Mobile extras */}
-      <div className="flex md:hidden items-center gap-2 ml-[52px] mt-1 mb-2">
-        <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
-        {partner.reportStatus && (
-          <ReportStatusChip status={partner.reportStatus} />
-        )}
-        <span className="dl-type-caption text-[var(--text-3)] tabular-nums">
-          {partner.leadCount} leads
-        </span>
-      </div>
     </div>
   );
 }
