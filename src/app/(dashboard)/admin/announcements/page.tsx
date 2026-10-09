@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin";
 import { Button } from "@/components/ui/button";
-import { Plus, CalendarCheck } from "lucide-react";
+import { Plus, Megaphone } from "lucide-react";
 import Link from "next/link";
 import { AnnouncementActions } from "./announcement-actions";
 import {
@@ -55,7 +55,7 @@ export default async function AnnouncementsPage() {
 
       {announcements.length === 0 ? (
         <EmptyContentCard
-          icon={<CalendarCheck className="h-7 w-7" />}
+          icon={<Megaphone className="h-7 w-7" />}
           title="No announcements yet"
           body="Create your first announcement for your partners."
           action={
